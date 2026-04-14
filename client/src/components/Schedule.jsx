@@ -126,7 +126,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     setLoading(true)
     try {
       const { start, end } = getWeekDates(currentWeek)
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules`, {
         params: {
           startDate: formatDate(start),
           endDate: formatDate(end)
@@ -143,7 +143,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   const fetchSubmissionStatus = async () => {
     try {
       const { start } = getWeekDates(currentWeek)
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules/submission-status', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules/submission-status`, {
         params: { weekStart: formatDate(start) }
       })
       if (readOnly) {
@@ -161,7 +161,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   const fetchNotifications = async () => {
     if (!readOnly) return
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/notifications', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/notifications`, {
         params: { unreadOnly: 'false' }
       })
       setNotifications(response.data)
@@ -184,7 +184,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     setSubmitting(true)
     try {
       const { start, end } = getWeekDates(currentWeek)
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules/submit', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules/submit`, {
         weekStart: formatDate(start),
         weekEnd: formatDate(end),
         isEdit: isEdit
@@ -209,7 +209,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
 
   const markAllNotificationsRead = async () => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/read-all')
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`)
       fetchNotifications()
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error)
@@ -269,7 +269,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules`, {
         staffId,
         date: formatDate(selectedCell.date),
         shift: selectedCell.shift,
@@ -313,7 +313,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     if (!swapMode) return
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules/swap', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules/swap`, {
         scheduleId1: swapMode.scheduleId,
         scheduleId2: targetScheduleId
       })

@@ -74,7 +74,7 @@ function Tutorials() {
       formData.append('description', uploadForm.description || '')
       formData.append('video', uploadForm.video)
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/tutorials', formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/tutorials`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

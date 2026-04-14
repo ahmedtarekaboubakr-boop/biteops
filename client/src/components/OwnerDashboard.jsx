@@ -35,7 +35,7 @@ function OwnerDashboard() {
 
   const fetchStaff = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
       // Filter out Area Managers and Operations Managers
       const filteredStaff = response.data.filter(s => 
         s.title !== 'Area Manager' && s.title !== 'Operations Manager'
@@ -76,7 +76,7 @@ function OwnerDashboard() {
       return
     }
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/activity-log')
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/activity-log`)
       setActivities([])
     } catch (error) {
       console.error('Failed to clear activities:', error)
