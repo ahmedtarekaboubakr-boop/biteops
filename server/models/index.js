@@ -29,9 +29,14 @@ import FinancialTransaction from "./FinancialTransaction.js";
 // Load .env from project root (BiteOps/.env)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, "..", "..", ".env") });
+const envPath = join(__dirname, "..", "..", ".env");
+console.log("Loading .env from:", envPath);
+dotenv.config({ path: envPath });
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/biteops";
+console.log("MongoDB URI:", MONGODB_URI.substring(0, 30) + "..."); // Show first 30 chars only for security
+console.log("Attempting to connect to MongoDB...");
+
 // Connect to MongoDB
 mongoose
   .connect(MONGODB_URI)
