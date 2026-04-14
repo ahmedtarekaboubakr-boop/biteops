@@ -66,7 +66,7 @@ function Requests({ staff, isHR = false }) {
       if (filter !== 'all') params.status = filter
       if (requestTypeFilter !== 'all') params.requestType = requestTypeFilter
 
-      const response = await axios.get('/api/leave-requests', { params })
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/leave-requests', { params })
       setRequests(response.data)
     } catch (error) {
       console.error('Failed to fetch requests:', error)
@@ -109,7 +109,7 @@ function Requests({ staff, isHR = false }) {
 
   const handleFormSubmit = async (data) => {
     try {
-      await axios.post('/api/leave-requests', data)
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/leave-requests', data)
       setShowForm(false)
       fetchRequests()
       fetchLeaveBalances()

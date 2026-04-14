@@ -24,7 +24,7 @@ function Tutorials() {
   const fetchTutorials = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('/api/tutorials')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tutorials`)
       setTutorials(response.data)
     } catch (error) {
       console.error('Failed to fetch tutorials:', error)
@@ -74,7 +74,7 @@ function Tutorials() {
       formData.append('description', uploadForm.description || '')
       formData.append('video', uploadForm.video)
 
-      await axios.post('/api/tutorials', formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/tutorials', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

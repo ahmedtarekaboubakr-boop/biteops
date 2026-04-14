@@ -47,11 +47,11 @@ function StaffForm({ staff, onClose, onSuccess }) {
     try {
       // Try to fetch from branches API (for HR)
       try {
-        const response = await axios.get('/api/branches')
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/branches')
         setBranches(response.data.map(b => b.name))
       } catch (err) {
         // If not HR or API fails, fall back to getting unique branches from users
-        const staffResponse = await axios.get('/api/staff')
+        const staffResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
         const uniqueBranches = [...new Set(staffResponse.data.map(s => s.branch).filter(Boolean))]
         setBranches(uniqueBranches.length > 0 ? uniqueBranches : ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch'])
       }
@@ -267,7 +267,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         if (submitData.totalLeaveDays) {
           submitData.totalLeaveDays = parseInt(submitData.totalLeaveDays) || 0
         }
-        const response = await axios.post('/api/staff', submitData)
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/staff', submitData)
         
         // Upload photo if provided for new staff
         if (photoFile && response.data.id) {

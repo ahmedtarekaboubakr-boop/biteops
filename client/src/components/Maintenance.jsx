@@ -78,7 +78,7 @@ function Maintenance() {
           branch: branch
         })
       } else {
-        await axios.post('/api/maintenance', {
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/maintenance', {
           ...formData,
           branch: branch
         })

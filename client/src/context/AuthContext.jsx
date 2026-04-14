@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get('/api/auth/me')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me')
       setUser(response.data)
     } catch (error) {
       localStorage.removeItem('token')
@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
       ? { email: emailOrUsername, password }
       : { username: emailOrUsername, password }
     
-    const response = await axios.post('/api/auth/login', payload)
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login', payload)
     const { token, user } = response.data
     localStorage.setItem('token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`

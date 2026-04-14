@@ -21,7 +21,7 @@ function BranchManagement() {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get('/api/branches')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/branches')
       setBranches(response.data)
     } catch (error) {
       console.error('Failed to fetch branches:', error)
@@ -33,7 +33,7 @@ function BranchManagement() {
 
   const fetchAllStaff = async () => {
     try {
-      const response = await axios.get('/api/staff')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
       setStaff(response.data)
     } catch (error) {
       console.error('Failed to fetch staff:', error)
@@ -119,7 +119,7 @@ function BranchManagement() {
     }
 
     try {
-      const response = await axios.post('/api/branches/initialize')
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/branches/initialize')
       alert(`Branches initialized successfully!\nCreated: ${response.data.created.join(', ') || 'None'}\nSkipped (already exist): ${response.data.skipped.join(', ') || 'None'}`)
       fetchBranches()
     } catch (error) {
@@ -472,13 +472,13 @@ function BranchForm({ branch, onClose, onSuccess }) {
   const fetchManagers = async () => {
     try {
       // Fetch branch managers specifically (users with role 'manager' and title 'Branch Manager')
-      const response = await axios.get('/api/branch-managers')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/branch-managers')
       setManagers(response.data)
     } catch (error) {
       console.error('Failed to fetch branch managers:', error)
       // Fallback: try to get from staff endpoint
       try {
-        const staffResponse = await axios.get('/api/staff')
+        const staffResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
         setManagers(staffResponse.data.filter(m => m.role === 'manager' && m.title === 'Branch Manager'))
       } catch (fallbackError) {
         console.error('Failed to fetch managers from staff endpoint:', fallbackError)
@@ -502,7 +502,7 @@ function BranchForm({ branch, onClose, onSuccess }) {
       if (branch) {
         await axios.put(`/api/branches/${branch.id}`, formData)
       } else {
-        await axios.post('/api/branches', formData)
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/branches', formData)
       }
       onSuccess()
     } catch (err) {

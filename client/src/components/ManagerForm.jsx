@@ -55,7 +55,7 @@ function ManagerForm({ manager, onClose, onSuccess }) {
         }
         await axios.put(`/api/managers/${manager.id}`, updateData)
       } else {
-        await axios.post('/api/managers', formData)
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/managers', formData)
       }
       onSuccess()
     } catch (err) {

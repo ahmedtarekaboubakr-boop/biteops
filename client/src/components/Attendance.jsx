@@ -37,16 +37,16 @@ function Attendance({ staff, readOnly = false }) {
       }
 
       if (activeSection === 'fingerprint') {
-        const response = await axios.get('/api/attendance/fingerprint', { params })
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/fingerprint', { params })
         setFingerprintLogs(response.data)
       } else if (activeSection === 'records') {
-        const response = await axios.get('/api/attendance', { params })
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance', { params })
         setAttendanceRecords(response.data)
       } else if (activeSection === 'summary') {
-        const response = await axios.get('/api/attendance/summary', { params })
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/summary', { params })
         setAttendanceSummary(response.data)
       } else if (activeSection === 'branch-stats' && canViewBranchStats) {
-        const response = await axios.get('/api/attendance/branch-statistics', { params })
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/branch-statistics', { params })
         setBranchStatistics(response.data)
       }
     } catch (error) {
@@ -64,7 +64,7 @@ function Attendance({ staff, readOnly = false }) {
 
     try {
       const clockTime = new Date().toISOString()
-      await axios.post('/api/attendance/clock', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/attendance/clock', {
         staffId,
         clockTime,
         clockType

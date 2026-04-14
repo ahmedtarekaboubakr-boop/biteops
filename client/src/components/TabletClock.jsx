@@ -67,7 +67,7 @@ function TabletClock() {
 
     try {
       const clockTime = new Date().toISOString()
-      await axios.post('/api/tablet/clock', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/tablet/clock', {
         staffId,
         clockTime,
         clockType,

@@ -15,7 +15,7 @@ function AnnouncementBanner() {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await axios.get('/api/announcements')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/announcements')
       setAnnouncements(response.data || [])
     } catch (error) {
       console.error('Failed to fetch announcements:', error)
