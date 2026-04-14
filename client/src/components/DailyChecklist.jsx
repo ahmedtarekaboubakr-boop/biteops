@@ -134,7 +134,7 @@ function DailyChecklist() {
   const fetchChecklist = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/checklists', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/checklists`, {
         params: { date: selectedDate }
       })
       
@@ -161,7 +161,7 @@ function DailyChecklist() {
   const fetchHistory = async () => {
     setHistoryLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/checklists/history')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/checklists/history`)
       setHistory(response.data)
     } catch (error) {
       console.error('Failed to fetch history:', error)
@@ -183,7 +183,7 @@ function DailyChecklist() {
 
     setSaving(true)
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/checklists', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/checklists`, {
         date: selectedDate,
         shift,
         itemId,

@@ -73,7 +73,7 @@ function Announcements() {
         }
       }
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/announcements', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/announcements`, {
         title: formData.title,
         message: formData.message,
         targetRoles: formData.targetRoles,
@@ -129,21 +129,21 @@ function Announcements() {
     try {
       if (user?.role === 'hr_manager') {
         // HR sees all staff with specific titles from all branches
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
         const allowedTitles = ['Crew', 'Cashier', 'Supervisor', 'Line Leader', 'Assistant Manager']
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && allowedTitles.includes(staff.title)
         ))
       } else if (user?.role === 'manager' && user?.branch) {
         // Branch Manager sees only staff from their branch
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`, {
           params: { branch: user.branch }
         })
         setStaffMembers(response.data.filter(staff => staff.role === 'staff'))
       } else if (user?.role === 'area_manager' && user?.area) {
         // Area Manager sees all staff from branches in their assigned area
         const assignedBranches = getAreaManagerBranches(user.area)
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff')
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && assignedBranches.includes(staff.branch)
         ))
@@ -358,11 +358,11 @@ function Announcements() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {isBranchManager 
-                    ? `Target Branch (Your branch: ${user?.branch || 'N/A'})` 
+                  {isBranchManager
+                    ? `Target Branch (Your branch: ${user?.branch || 'N/A'})`
                     : isAreaManager
-                    ? `Target Branches (Your area: ${user?.area || 'N/A'})`
-                    : 'Target Branches (Optional - leave empty for all branches)'}
+                      ? `Target Branches (Your area: ${user?.area || 'N/A'})`
+                      : 'Target Branches (Optional - leave empty for all branches)'}
                 </label>
                 {isBranchManager ? (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -570,4 +570,3 @@ function Announcements() {
 }
 
 export default Announcements
-
