@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# This script provides the manual conversion steps for remaining controllers
+# Due to the complexity of each controller, manual review is recommended
+
+echo "Remaining controllers to convert to Mongoose:"
+echo "1. managersController.js - Complex user CRUD"
+echo "2. staffController.js - Very complex with file uploads"
+echo "3. scheduleController.js - Complex with JOINs"
+echo "4. ratingsController.js - Medium complexity"
+echo "5. announcementsController.js - Medium complexity"
+echo "6. leaveRequestsController.js - Complex approval workflow"
+echo "7. attendanceController.js - Complex time tracking"
+echo "8. penaltiesController.js - Medium complexity"
+echo "9. inventoryController.js - Complex with transactions"
+echo "10. branchesController.js - Medium complexity"
+echo "11. leaderboardController.js - Complex aggregations"
+echo "12. maintenanceController.js - Simple CRUD"
+echo "13. tabletController.js - Medium complexity"
+
+echo ""
+echo "Conversion pattern for each:"
+echo "1. Replace: import { dbGet, dbRun, dbAll } from '../db.js';"
+echo "   With: import { User, Model1, Model2, ... } from '../db.js';"
+echo ""
+echo "2. Replace dbGet() with Model.findOne() or Model.findById()"
+echo "3. Replace dbAll() with Model.find()"
+echo "4. Replace dbRun(INSERT...) with Model.create()"
+echo "5. Replace dbRun(UPDATE...) with Model.findByIdAndUpdate() or Model.updateOne()"
+echo "6. Replace dbRun(DELETE...) with Model.findByIdAndDelete() or Model.deleteOne()"
+echo "7. Handle JOINs with .populate() or aggregate()"
+echo "8. Replace result.lastID with doc._id or doc.id"
+echo "9. Replace UNIQUE constraint checks with err.code === 11000"
+echo ""
+echo "See MONGOOSE_CONVERSION_GUIDE.md for detailed patterns"
