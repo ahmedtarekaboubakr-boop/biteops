@@ -37,7 +37,7 @@ const PORT = process.env.PORT || 3001;
 // CORS configuration - allow requests from Vercel frontend
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps, curl, or same-origin)
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
@@ -46,16 +46,22 @@ const corsOptions = {
       'https://biteops.vercel.app'
     ];
     
-    // Check if origin is allowed or is a Vercel preview deployment
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    // Check if origin is in allowed list OR ends with .vercel.app
+    const isAllowed = allowedOrigins.includes(origin) || 
+                      (origin.includes('.vercel.app'));
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS blocked origin:', origin);
+      callback(null, false);
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));
