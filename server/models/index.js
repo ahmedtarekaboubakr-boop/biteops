@@ -43,11 +43,12 @@ mongoose
   .then(async () => {
     console.log("✓ Connected to MongoDB successfully");
 
-    // Create default owner account if it doesn't exist
+    // Create or update default owner account
     try {
       const owner = await User.findOne({ role: "owner" });
       if (!owner) {
-        const defaultPassword = bcrypt.hashSync("admin123", 10);
+        // Create new owner account
+        const defaultPassword = bcrypt.hashSync("owner", 10);
         await User.create({
           name: "Owner",
           email: "owner@jjs.com",
@@ -55,12 +56,18 @@ mongoose
           password: defaultPassword,
           role: "owner",
         });
-        console.log("✓ Default owner account created: owner@jjs.com / admin123");
+        console.log("✓ Default owner account created: username=owner, password=owner");
       } else {
-        console.log("✓ Owner account already exists");
+        // Update existing owner account to ensure password is "owner"
+        const defaultPassword = bcrypt.hashSync("owner", 10);
+        owner.password = defaultPassword;
+        owner.username = "owner";
+        owner.email = "owner@jjs.com";
+        await owner.save();
+        console.log("✓ Owner account updated: username=owner, password=owner");
       }
     } catch (error) {
-      console.error("⚠️  Error creating default owner:", error.message);
+      console.error("⚠️  Error creating/updating default owner:", error.message);
     }
   })
   .catch((err) => {

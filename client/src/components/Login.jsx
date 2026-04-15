@@ -98,7 +98,7 @@ function Login() {
 
         <div className="mt-6 text-center text-sm text-gray-500">
           <p>{t('defaultCredentials')}</p>
-          <p className="font-mono">owner@jjs.com / admin123</p>
+          <p className="font-mono">username: owner / password: owner</p>
         </div>
       </div>
     </div>
