@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -78,7 +79,7 @@ function Maintenance() {
           branch: branch
         })
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/maintenance`, {
+        await axios.post(`${API_URL}/api/maintenance`, {
           ...formData,
           branch: branch
         })

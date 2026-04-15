@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import axios from 'axios'
@@ -533,7 +534,7 @@ function StaffRequests() {
     setLoading(true)
     try {
       // Use the main leave-requests endpoint which now allows staff to see their own requests
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/leave-requests`)
+      const response = await axios.get(`${API_URL}/api/leave-requests`)
       setRequests(response.data)
     } catch (error) {
       console.error('Failed to fetch requests:', error)
@@ -674,7 +675,7 @@ function StaffPenalties() {
   const fetchPenalties = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff/my-penalties`)
+      const response = await axios.get(`${API_URL}/api/staff/my-penalties`)
       setPenalties(response.data)
     } catch (error) {
       console.error('Failed to fetch penalties:', error)

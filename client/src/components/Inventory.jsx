@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -36,13 +37,13 @@ function Inventory() {
     try {
       if (activeSection === 'transfers') {
         const [outgoing, incoming] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/api/inventory/transfers`),
-          axios.get(`${import.meta.env.VITE_API_URL}/api/inventory/transfers/incoming`)
+          axios.get(`${API_URL}/api/inventory/transfers`),
+          axios.get(`${API_URL}/api/inventory/transfers/incoming`)
         ])
         setTransfers(outgoing.data)
         setIncomingTransfers(incoming.data)
       } else if (activeSection === 'waste') {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/inventory/waste`)
+        const response = await axios.get(`${API_URL}/api/inventory/waste`)
         setWaste(response.data)
       } else if (activeSection === 'spot-check') {
         const response = await axios.get(`/api/inventory/spot-check?date=${selectedDate}`)
@@ -65,7 +66,7 @@ function Inventory() {
     // Fetch inventory if needed for the form
     if (type === 'transfer' || type === 'waste' || type === 'dispose' || type === 'receive') {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/inventory`)
+        const response = await axios.get(`${API_URL}/api/inventory`)
         setInventory(response.data)
       } catch (error) {
         console.error('Failed to fetch inventory:', error)
@@ -78,13 +79,13 @@ function Inventory() {
   const handleFormSubmit = async (data) => {
     try {
       if (formType === 'receive') {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/inventory/receive`, data)
+        await axios.post(`${API_URL}/api/inventory/receive`, data)
       } else if (formType === 'add') {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/inventory`, data)
+        await axios.post(`${API_URL}/api/inventory`, data)
       } else if (formType === 'transfer') {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/inventory/transfer`, data)
+        await axios.post(`${API_URL}/api/inventory/transfer`, data)
       } else if (formType === 'waste' || formType === 'dispose') {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/inventory/waste`, { ...data, type: formType })
+        await axios.post(`${API_URL}/api/inventory/waste`, { ...data, type: formType })
       }
       setShowForm(false)
       fetchData()
@@ -722,7 +723,7 @@ function SpotCheckForm({ checkType, date, spotChecks, onSave }) {
 
     setSubmitting(true)
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/inventory/spot-check`, {
+      await axios.post(`${API_URL}/api/inventory/spot-check`, {
         date,
         checkType,
         category: formData.category,

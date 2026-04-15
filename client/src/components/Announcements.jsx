@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -73,7 +74,7 @@ function Announcements() {
         }
       }
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/announcements`, {
+      await axios.post(`${API_URL}/api/announcements`, {
         title: formData.title,
         message: formData.message,
         targetRoles: formData.targetRoles,
@@ -129,21 +130,21 @@ function Announcements() {
     try {
       if (user?.role === 'hr_manager') {
         // HR sees all staff with specific titles from all branches
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
+        const response = await axios.get(`${API_URL}/api/staff`)
         const allowedTitles = ['Crew', 'Cashier', 'Supervisor', 'Line Leader', 'Assistant Manager']
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && allowedTitles.includes(staff.title)
         ))
       } else if (user?.role === 'manager' && user?.branch) {
         // Branch Manager sees only staff from their branch
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`, {
+        const response = await axios.get(`${API_URL}/api/staff`, {
           params: { branch: user.branch }
         })
         setStaffMembers(response.data.filter(staff => staff.role === 'staff'))
       } else if (user?.role === 'area_manager' && user?.area) {
         // Area Manager sees all staff from branches in their assigned area
         const assignedBranches = getAreaManagerBranches(user.area)
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
+        const response = await axios.get(`${API_URL}/api/staff`)
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && assignedBranches.includes(staff.branch)
         ))

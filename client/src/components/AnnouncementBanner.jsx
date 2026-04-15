@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,7 +16,7 @@ function AnnouncementBanner() {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/announcements`)
+      const response = await axios.get(`${API_URL}/api/announcements`)
       setAnnouncements(response.data || [])
     } catch (error) {
       console.error('Failed to fetch announcements:', error)

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -136,7 +137,7 @@ function Rating({ readOnly: propReadOnly = false }) {
       // Fetch attendance records for the selected date
       let attendanceMap = {}
       try {
-        const attendanceResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance`, {
+        const attendanceResponse = await axios.get(`${API_URL}/api/attendance`, {
           params: { startDate: selectedDate, endDate: selectedDate }
         })
         if (attendanceResponse.data) {
@@ -150,7 +151,7 @@ function Rating({ readOnly: propReadOnly = false }) {
         setAttendanceRecords({})
       }
       
-      const ratingsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/ratings`, {
+      const ratingsResponse = await axios.get(`${API_URL}/api/ratings`, {
         params: { startDate: selectedDate, endDate: selectedDate }
       })
       
@@ -215,7 +216,7 @@ function Rating({ readOnly: propReadOnly = false }) {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - 30)
       
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/ratings`, {
+      const response = await axios.get(`${API_URL}/api/ratings`, {
         params: {
           startDate: formatDate(startDate),
           endDate: formatDate(endDate)
@@ -345,7 +346,7 @@ function Rating({ readOnly: propReadOnly = false }) {
       // Submit all ratings that have a performance value
       for (const staff of staffToRate) {
         const rating = ratings[staff.staff_id]
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/ratings`, {
+        await axios.post(`${API_URL}/api/ratings`, {
           staffId: staff.staff_id,
           date: selectedDate,
           nailsCut: rating.nailsCut || false,

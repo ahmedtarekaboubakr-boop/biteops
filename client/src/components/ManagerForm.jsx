@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 
 const BRANCHES = ['All Branches', 'Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
@@ -55,7 +56,7 @@ function ManagerForm({ manager, onClose, onSuccess }) {
         }
         await axios.put(`/api/managers/${manager.id}`, updateData)
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/managers`, formData)
+        await axios.post(`${API_URL}/api/managers`, formData)
       }
       onSuccess()
     } catch (err) {

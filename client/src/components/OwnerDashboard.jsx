@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import axios from 'axios'
@@ -35,7 +36,7 @@ function OwnerDashboard() {
 
   const fetchStaff = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`)
+      const response = await axios.get(`${API_URL}/api/staff`)
       // Filter out Area Managers and Operations Managers
       const filteredStaff = response.data.filter(s => 
         s.title !== 'Area Manager' && s.title !== 'Operations Manager'
@@ -76,7 +77,7 @@ function OwnerDashboard() {
       return
     }
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/activity-log`)
+      await axios.delete(`${API_URL}/api/activity-log`)
       setActivities([])
     } catch (error) {
       console.error('Failed to clear activities:', error)

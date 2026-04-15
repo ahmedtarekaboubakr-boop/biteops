@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 
@@ -24,7 +25,7 @@ function Tutorials() {
   const fetchTutorials = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tutorials`)
+      const response = await axios.get(`${API_URL}/api/tutorials`)
       setTutorials(response.data)
     } catch (error) {
       console.error('Failed to fetch tutorials:', error)
@@ -74,7 +75,7 @@ function Tutorials() {
       formData.append('description', uploadForm.description || '')
       formData.append('video', uploadForm.video)
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/tutorials`, formData, {
+      await axios.post(`${API_URL}/api/tutorials`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -126,7 +127,7 @@ function Tutorials() {
     // Handle both Windows and Unix paths
     const relativePath = filePath.replace(/^.*[\\\/]uploads[\\\/]/, '/uploads/')
     // Use the backend server URL for video files
-    return `${import.meta.env.VITE_API_URL}${relativePath.replace(/\\/g, '/')}`
+    return `${API_URL}${relativePath.replace(/\\/g, '/')}`
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -44,7 +45,7 @@ function Penalties({ staff }) {
       if (filters.penaltyType) params.penaltyType = filters.penaltyType
       if (filters.status) params.status = filters.status
 
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/penalties`, { params })
+      const response = await axios.get(`${API_URL}/api/penalties`, { params })
       setPenalties(response.data)
     } catch (error) {
       console.error('Failed to fetch penalties:', error)
@@ -75,7 +76,7 @@ function Penalties({ staff }) {
         await axios.put(`/api/penalties/${editingPenalty.id}`, formData)
         alert('Penalty updated successfully')
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/penalties`, formData)
+        await axios.post(`${API_URL}/api/penalties`, formData)
         alert('Penalty created successfully')
       }
       handleFormClose()

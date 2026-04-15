@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 
 const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
@@ -67,7 +68,7 @@ function TabletClock() {
 
     try {
       const clockTime = new Date().toISOString()
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/tablet/clock`, {
+      await axios.post(`${API_URL}/api/tablet/clock`, {
         staffId,
         clockTime,
         clockType,

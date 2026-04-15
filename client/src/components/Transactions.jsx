@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 
 const TRANSACTION_TYPES = [
@@ -38,8 +39,8 @@ function Transactions() {
       }
 
       const [transResponse, summaryResponse] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/transactions`, { params }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/transactions/summary`, { params: { date: dateRange.startDate } })
+        axios.get(`${API_URL}/api/transactions`, { params }),
+        axios.get(`${API_URL}/api/transactions/summary`, { params: { date: dateRange.startDate } })
       ])
 
       setTransactions(transResponse.data)
@@ -53,7 +54,7 @@ function Transactions() {
 
   const handleFormSubmit = async (data) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/transactions`, data)
+      await axios.post(`${API_URL}/api/transactions`, data)
       setShowForm(false)
       fetchTransactions()
     } catch (error) {
