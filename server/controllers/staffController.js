@@ -5,6 +5,7 @@ import { dirname, join } from 'path';
 import { User, EmploymentHistory, StaffLeaveBalance, Schedule, Rating, AttendanceRecord, LeaveRequest, Penalty } from '../db.js';
 import { logActivity } from '../utils/activityLogger.js';
 import { getAreaManagerBranches } from '../utils/getAreaManagerBranches.js';
+import { hasHRPrivileges } from '../utils/roleHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -83,7 +84,23 @@ export async function uploadHealthCertificate(req, res) {
 
 export async function createStaff(req, res) {
   try {
-    let { name, username, password, dateOfBirth, employeeCode, title, phoneNumber, idNumber, startDate, payrollInfo, branch, salary, totalLeaveDays, area } = req.body;
+    let {
+      name,
+      username,
+      password,
+      dateOfBirth,
+      employeeCode,
+      title,
+      phoneNumber,
+      idNumber,
+      startDate,
+      payrollInfo,
+      branch,
+      salary,
+      totalLeaveDays,
+      area,
+      mustChangePassword,
+    } = req.body;
 
     if (req.user.role === 'manager') {
       const manager = await User.findById(req.user.id).select('branch');
@@ -148,6 +165,8 @@ export async function createStaff(req, res) {
     else if (title === 'Area Manager') role = 'area_manager';
     else if (title === 'Operations Manager') role = 'operations_manager';
 
+    const setMustChange = req.user.role === 'owner' && !!mustChangePassword;
+
     const staff = await User.create({
       name,
       username,
@@ -162,7 +181,8 @@ export async function createStaff(req, res) {
       branch: branch || null,
       role,
       salary: salary || null,
-      area: area || null
+      area: area || null,
+      must_change_password: setMustChange,
     });
 
     if (title) {
@@ -210,7 +230,7 @@ export async function createStaff(req, res) {
 export async function getStaff(req, res) {
   try {
     const { status } = req.query;
-    const showInactive = req.user.role === 'hr_manager' && status === 'all';
+    const showInactive = hasHRPrivileges(req.user.role) && status === 'all';
     const match = { role: { $in: ['staff', 'manager', 'area_manager', 'operations_manager'] } };
 
     if (req.user.role === 'manager') {

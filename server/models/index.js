@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import dotenv from "dotenv";
 import User from "./User.js";
 import Branch from "./Branch.js";
 import Schedule from "./Schedule.js";
@@ -25,29 +22,43 @@ import MaintenanceItem from "./MaintenanceItem.js";
 import Announcement from "./Announcement.js";
 import AnnouncementView from "./AnnouncementView.js";
 import FinancialTransaction from "./FinancialTransaction.js";
+import ShiftSwapRequest from "./ShiftSwapRequest.js";
+import IncidentReport from "./IncidentReport.js";
+import EquipmentAsset from "./EquipmentAsset.js";
+import PrepChecklist from "./PrepChecklist.js";
+import OnboardingTask from "./OnboardingTask.js";
 
-// Load .env from project root (BiteOps/.env)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, "..", "..", ".env");
-console.log("Loading .env from:", envPath);
-dotenv.config({ path: envPath });
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/biteops";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/biteops";
-console.log("MongoDB URI:", MONGODB_URI.substring(0, 30) + "..."); // Show first 30 chars only for security
-console.log("Attempting to connect to MongoDB...");
+function mongoLogTarget(uri) {
+  try {
+    const rest = uri.replace(/^mongodb(\+srv)?:\/\//, "");
+    const hostPart = rest.includes("@") ? rest.split("@")[1] : rest;
+    return hostPart.split("/")[0].split("?")[0];
+  } catch {
+    return "(unknown)";
+  }
+}
 
-// Connect to MongoDB
+mongoose.connection.on("disconnected", () => {
+  console.warn("[MongoDB] disconnected");
+});
+
+console.log(`[MongoDB] connecting to ${mongoLogTarget(MONGODB_URI)} ...`);
+
 mongoose
   .connect(MONGODB_URI)
   .then(async () => {
-    console.log("✓ Connected to MongoDB successfully");
+    const { host, name, port } = mongoose.connection;
+    console.log(
+      `[MongoDB] connected db="${name}" host=${host}${port ? ` port=${port}` : ""} (cluster ${mongoLogTarget(MONGODB_URI)})`
+    );
 
     // Create or update default owner account
     try {
       const owner = await User.findOne({ role: "owner" });
       if (!owner) {
-        // Create new owner account
         const defaultPassword = bcrypt.hashSync("owner", 10);
         await User.create({
           name: "Owner",
@@ -58,7 +69,6 @@ mongoose
         });
         console.log("✓ Default owner account created: username=owner, password=owner");
       } else {
-        // Update existing owner account to ensure password is "owner"
         const defaultPassword = bcrypt.hashSync("owner", 10);
         owner.password = defaultPassword;
         owner.username = "owner";
@@ -70,11 +80,10 @@ mongoose
       console.error("⚠️  Error creating/updating default owner:", error.message);
     }
 
-    // Create or update default HR manager account (for new staff management dashboard)
+    // Create or update default HR manager account
     try {
       const hrManager = await User.findOne({ username: "hr" });
       if (!hrManager) {
-        // Create new HR manager account
         const defaultPassword = bcrypt.hashSync("hr", 10);
         await User.create({
           name: "HR Manager",
@@ -85,7 +94,6 @@ mongoose
         });
         console.log("✓ Default HR manager account created: username=hr, password=hr");
       } else {
-        // Update existing HR manager account
         const defaultPassword = bcrypt.hashSync("hr", 10);
         hrManager.password = defaultPassword;
         hrManager.role = "hr_manager";
@@ -97,11 +105,10 @@ mongoose
       console.error("⚠️  Error creating/updating HR manager:", error.message);
     }
 
-    // Create or update default branch manager account (for full dashboard with Inventory & Transactions)
+    // Create or update default branch manager account
     try {
       const branchManager = await User.findOne({ username: "manager" });
       if (!branchManager) {
-        // Create new branch manager account
         const defaultPassword = bcrypt.hashSync("manager", 10);
         await User.create({
           name: "Branch Manager",
@@ -113,7 +120,6 @@ mongoose
         });
         console.log("✓ Default branch manager account created: username=manager, password=manager");
       } else {
-        // Update existing branch manager account
         const defaultPassword = bcrypt.hashSync("manager", 10);
         branchManager.password = defaultPassword;
         branchManager.role = "manager";
@@ -130,8 +136,8 @@ mongoose
     console.error("==========================================");
     console.error("❌ MongoDB connection FAILED");
     console.error("==========================================");
+    console.error(`Target: ${mongoLogTarget(MONGODB_URI)}`);
     console.error("Error:", err.message);
-    console.error("Connection string (partial):", MONGODB_URI.substring(0, 30) + "...");
     console.error("");
     console.error("Common causes:");
     console.error("1. MONGODB_URI environment variable not set correctly");
@@ -170,4 +176,9 @@ export {
   Announcement,
   AnnouncementView,
   FinancialTransaction,
+  ShiftSwapRequest,
+  IncidentReport,
+  EquipmentAsset,
+  PrepChecklist,
+  OnboardingTask,
 };

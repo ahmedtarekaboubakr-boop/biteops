@@ -1,0 +1,26 @@
+// Re-export all Mongoose models from models/index.js
+export {
+  mongoose,
+  User,
+  Branch,
+  Schedule,
+  ScheduleSubmission,
+  HrNotification,
+  ActivityLog,
+  Checklist,
+  Rating,
+  Tutorial,
+  StaffLeaveBalance,
+  LeaveRequest,
+  FingerprintLog,
+  AttendanceRecord,
+  Penalty,
+  EmploymentHistory,
+  InventoryItem,
+  InventoryTransaction,
+  SpotCheck,
+  MaintenanceItem,
+  Announcement,
+  AnnouncementView,
+  FinancialTransaction
+} from './models/index.js';

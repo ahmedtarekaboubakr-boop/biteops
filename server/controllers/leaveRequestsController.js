@@ -1,6 +1,7 @@
 import { LeaveRequest, User, HrNotification, StaffLeaveBalance } from '../db.js';
 import { logActivity } from '../utils/activityLogger.js';
 import { getAreaManagerBranches } from '../utils/getAreaManagerBranches.js';
+import { hasHRPrivileges } from '../utils/roleHelpers.js';
 
 async function getAreaManagerForBranch(branch) {
   const normalizedBranch = branch?.trim()?.toLowerCase();
@@ -189,7 +190,7 @@ export async function updateLeaveRequest(req, res) {
       }
     } else if (request.operations_manager_status === 'approved' && request.hr_status === 'pending') {
       currentStage = 'hr_manager';
-      if (req.user.role === 'hr_manager') {
+      if (hasHRPrivileges(req.user.role)) {
         canApprove = true;
         nextStage = null;
       }
@@ -257,7 +258,7 @@ export async function updateLeaveRequest(req, res) {
           });
         }
       } else if (nextStage === 'hr_manager') {
-        const hrManagers = await User.find({ role: 'hr_manager' }).select('_id');
+        const hrManagers = await User.find({ role: { $in: ['hr_manager', 'owner'] } }).select('_id');
         for (const hrManager of hrManagers) {
           await HrNotification.create({
             type: 'leave_request_pending',

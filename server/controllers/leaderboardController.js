@@ -1,8 +1,50 @@
 import { User, Rating, AttendanceRecord, Penalty } from '../db.js';
+import { hasHRPrivileges } from '../utils/roleHelpers.js';
+import { getAreaManagerBranches } from '../utils/getAreaManagerBranches.js';
+
+/**
+ * Resolves which branch(es) staff leaderboard should include for this user.
+ * @returns {string | { $in: string[] } | { $nin: (string|null)[] } | null} null = invalid / no access
+ */
+function resolveStaffLeaderboardBranchFilter(me, queryBranch) {
+  const qBranch = queryBranch && String(queryBranch).trim() ? String(queryBranch).trim() : '';
+
+  if (me.branch) {
+    if (qBranch && (hasHRPrivileges(me.role) || me.role === 'operations_manager')) {
+      return qBranch;
+    }
+    return me.branch;
+  }
+
+  if (hasHRPrivileges(me.role) || me.role === 'operations_manager') {
+    if (qBranch) return qBranch;
+    return { $nin: [null, ''] };
+  }
+
+  if (me.role === 'area_manager') {
+    const branches = getAreaManagerBranches(me.area);
+    if (branches.length === 0) {
+      return null;
+    }
+    if (qBranch) {
+      if (!branches.includes(qBranch)) {
+        return { error: 'forbidden', message: 'Branch not in your area' };
+      }
+      return qBranch;
+    }
+    return { $in: branches };
+  }
+
+  if (me.role === 'staff') {
+    return me.branch ? me.branch : null;
+  }
+
+  return null;
+}
 
 export async function getStaffLeaderboard(req, res) {
   try {
-    const { days } = req.query;
+    const { days, branch: branchQuery } = req.query;
     const daysNum = days === 'all' ? null : parseInt(days) || 30;
 
     const dateFilter = daysNum ? (() => {
@@ -11,15 +53,28 @@ export async function getStaffLeaderboard(req, res) {
       return startDate.toISOString().split('T')[0];
     })() : null;
 
-    const user = await User.findById(req.user.id).select('branch');
-    if (!user || !user.branch) {
-      return res.status(400).json({ error: 'Branch not found' });
+    const me = await User.findById(req.user.id).select('branch role area');
+    if (!me) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    const branchFilter = resolveStaffLeaderboardBranchFilter(me, branchQuery);
+    if (branchFilter && typeof branchFilter === 'object' && branchFilter.error === 'forbidden') {
+      return res.status(403).json({ error: branchFilter.message });
+    }
+    if (branchFilter === null) {
+      if (me.role === 'area_manager') {
+        return res.status(400).json({ error: 'No branches assigned to your area' });
+      }
+      return res.status(400).json({
+        error: 'Branch not found. Set your branch on your profile or contact HR.',
+      });
     }
 
     const staff = await User.find({
-      branch: user.branch,
+      branch: branchFilter,
       role: 'staff',
-      status: 'active'
+      status: 'active',
     })
       .select('name employee_code branch')
       .sort({ name: 1 })

@@ -32,6 +32,9 @@ const userSchema = new mongoose.Schema({
   title: String,
   phone_number: String,
   id_number: String,
+  must_change_password: { type: Boolean, default: false },
+  password_reset_token_hash: { type: String, default: null },
+  password_reset_expires: { type: Date, default: null },
   created_at: { type: Date, default: Date.now }
 }, {
   timestamps: false,

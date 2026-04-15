@@ -22,5 +22,10 @@ export {
   MaintenanceItem,
   Announcement,
   AnnouncementView,
-  FinancialTransaction
-} from './models/index.js';
+  FinancialTransaction,
+  ShiftSwapRequest,
+  IncidentReport,
+  EquipmentAsset,
+  PrepChecklist,
+  OnboardingTask,
+} from "./models/index.js";
