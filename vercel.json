@@ -1,8 +1,15 @@
 {
+  "buildCommand": "BUILD_TARGET=vercel npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://biteops.onrender.com"
+    }
+  }
 }
