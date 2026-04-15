@@ -97,8 +97,11 @@ function Login() {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>{t('defaultCredentials')}</p>
-          <p className="font-mono">username: owner / password: owner</p>
+          <p className="font-semibold mb-2">{t('defaultCredentials')}</p>
+          <div className="space-y-1">
+            <p className="font-mono text-xs">Owner: username: owner / password: owner</p>
+            <p className="font-mono text-xs text-brand-600 font-semibold">HR (Staff Management): username: hr / password: hr</p>
+          </div>
         </div>
       </div>
     </div>

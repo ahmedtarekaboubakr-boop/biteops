@@ -69,6 +69,33 @@ mongoose
     } catch (error) {
       console.error("⚠️  Error creating/updating default owner:", error.message);
     }
+
+    // Create or update default HR manager account (for new staff management dashboard)
+    try {
+      const hrManager = await User.findOne({ username: "hr" });
+      if (!hrManager) {
+        // Create new HR manager account
+        const defaultPassword = bcrypt.hashSync("hr", 10);
+        await User.create({
+          name: "HR Manager",
+          email: "hr@jjs.com",
+          username: "hr",
+          password: defaultPassword,
+          role: "hr_manager",
+        });
+        console.log("✓ Default HR manager account created: username=hr, password=hr");
+      } else {
+        // Update existing HR manager account
+        const defaultPassword = bcrypt.hashSync("hr", 10);
+        hrManager.password = defaultPassword;
+        hrManager.role = "hr_manager";
+        hrManager.email = "hr@jjs.com";
+        await hrManager.save();
+        console.log("✓ HR manager account updated: username=hr, password=hr");
+      }
+    } catch (error) {
+      console.error("⚠️  Error creating/updating HR manager:", error.message);
+    }
   })
   .catch((err) => {
     console.error("==========================================");
