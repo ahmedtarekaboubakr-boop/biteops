@@ -31,6 +31,40 @@ import tabletRoutes from './routes/tabletRoutes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Debug logging
+console.log('==========================================');
+console.log('Server Starting - Directory Information');
+console.log('==========================================');
+console.log('__dirname:', __dirname);
+console.log('dist path:', join(__dirname, 'dist'));
+console.log('index.html path:', join(__dirname, 'dist', 'index.html'));
+console.log('');
+
+// Check if dist folder exists
+import { existsSync, readdirSync } from 'fs';
+const distPath = join(__dirname, 'dist');
+if (existsSync(distPath)) {
+  console.log('✓ dist folder EXISTS');
+  console.log('Files in dist:');
+  try {
+    const files = readdirSync(distPath);
+    files.forEach(file => console.log('  -', file));
+  } catch (err) {
+    console.log('Error reading dist:', err.message);
+  }
+} else {
+  console.log('✗ ERROR: dist folder DOES NOT EXIST');
+  console.log('Checking what exists in server directory:');
+  try {
+    const serverFiles = readdirSync(__dirname);
+    serverFiles.forEach(file => console.log('  -', file));
+  } catch (err) {
+    console.log('Error reading server dir:', err.message);
+  }
+}
+console.log('==========================================');
+console.log('');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
