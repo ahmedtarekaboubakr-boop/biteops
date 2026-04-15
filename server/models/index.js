@@ -41,7 +41,7 @@ console.log("Attempting to connect to MongoDB...");
 mongoose
   .connect(MONGODB_URI)
   .then(async () => {
-    console.log("Connected to MongoDB");
+    console.log("✓ Connected to MongoDB successfully");
 
     // Create default owner account if it doesn't exist
     try {
@@ -55,15 +55,32 @@ mongoose
           password: defaultPassword,
           role: "owner",
         });
-        console.log("Default owner account created: owner@jjs.com / admin123");
+        console.log("✓ Default owner account created: owner@jjs.com / admin123");
+      } else {
+        console.log("✓ Owner account already exists");
       }
     } catch (error) {
-      console.error("Error creating default owner:", error);
+      console.error("⚠️  Error creating default owner:", error.message);
     }
   })
   .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1);
+    console.error("==========================================");
+    console.error("❌ MongoDB connection FAILED");
+    console.error("==========================================");
+    console.error("Error:", err.message);
+    console.error("Connection string (partial):", MONGODB_URI.substring(0, 30) + "...");
+    console.error("");
+    console.error("Common causes:");
+    console.error("1. MONGODB_URI environment variable not set correctly");
+    console.error("2. MongoDB Atlas IP whitelist doesn't include Render's IPs");
+    console.error("3. Invalid username/password in connection string");
+    console.error("4. Network connectivity issues");
+    console.error("==========================================");
+    console.error("");
+    console.error("⚠️  Server will continue running but database operations will fail.");
+    console.error("Please fix MONGODB_URI and restart the service.");
+    console.error("==========================================");
+    // DO NOT EXIT - let server continue for debugging
   });
 
 export {
