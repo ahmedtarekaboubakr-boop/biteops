@@ -34,37 +34,15 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS configuration - allow requests from Vercel frontend
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, or same-origin)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://biteops.vercel.app'
-    ];
-    
-    // Check if origin is in allowed list OR ends with .vercel.app
-    const isAllowed = allowedOrigins.includes(origin) || 
-                      (origin.includes('.vercel.app'));
-    
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, false);
-    }
-  },
+// CORS configuration - Allow all origins (temporary fix)
+// TODO: Restrict to specific domains in production
+app.use(cors({
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // 24 hours
-};
-
-app.use(cors(corsOptions));
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+}));
 app.use(express.json());
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 app.use(express.static(join(__dirname, 'dist')));
