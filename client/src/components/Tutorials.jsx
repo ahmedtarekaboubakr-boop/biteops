@@ -126,7 +126,7 @@ function Tutorials() {
     // Handle both Windows and Unix paths
     const relativePath = filePath.replace(/^.*[\\\/]uploads[\\\/]/, '/uploads/')
     // Use the backend server URL for video files
-    return `http://localhost:3001${relativePath.replace(/\\/g, '/')}`
+    return `${import.meta.env.VITE_API_URL}${relativePath.replace(/\\/g, '/')}`
   }
 
   return (
