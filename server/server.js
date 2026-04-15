@@ -63,7 +63,17 @@ app.use('/api/tablet', tabletRoutes);
 // Catch-all to serve SPA (only for non-API GET requests)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(join(__dirname, 'dist', 'index.html'));
+  const indexPath = join(__dirname, 'dist', 'index.html');
+  
+  // Check if dist folder exists
+  try {
+    res.sendFile(indexPath);
+  } catch (error) {
+    console.error('❌ ERROR: Cannot find dist/index.html');
+    console.error('This usually means the frontend build did not complete during deployment.');
+    console.error('Check that the build command ran successfully in the deployment logs.');
+    res.status(500).send('Frontend build files not found. Please check deployment logs.');
+  }
 });
 
 app.use((err, req, res, next) => {
