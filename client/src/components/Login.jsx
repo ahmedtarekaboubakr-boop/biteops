@@ -99,8 +99,9 @@ function Login() {
         <div className="mt-6 text-center text-sm text-gray-500">
           <p className="font-semibold mb-2">{t('defaultCredentials')}</p>
           <div className="space-y-1">
-            <p className="font-mono text-xs">Owner: username: owner / password: owner</p>
-            <p className="font-mono text-xs text-brand-600 font-semibold">HR (Staff Management): username: hr / password: hr</p>
+            <p className="font-mono text-xs">Owner (Branch Overview): owner / owner</p>
+            <p className="font-mono text-xs">HR (Staff List): hr / hr</p>
+            <p className="font-mono text-xs text-brand-600 font-bold">Manager (Full Dashboard + 📦💰): manager / manager</p>
           </div>
         </div>
       </div>

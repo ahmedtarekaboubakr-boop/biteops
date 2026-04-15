@@ -96,6 +96,35 @@ mongoose
     } catch (error) {
       console.error("⚠️  Error creating/updating HR manager:", error.message);
     }
+
+    // Create or update default branch manager account (for full dashboard with Inventory & Transactions)
+    try {
+      const branchManager = await User.findOne({ username: "manager" });
+      if (!branchManager) {
+        // Create new branch manager account
+        const defaultPassword = bcrypt.hashSync("manager", 10);
+        await User.create({
+          name: "Branch Manager",
+          email: "manager@jjs.com",
+          username: "manager",
+          password: defaultPassword,
+          role: "manager",
+          branch: "Arkan",
+        });
+        console.log("✓ Default branch manager account created: username=manager, password=manager");
+      } else {
+        // Update existing branch manager account
+        const defaultPassword = bcrypt.hashSync("manager", 10);
+        branchManager.password = defaultPassword;
+        branchManager.role = "manager";
+        branchManager.email = "manager@jjs.com";
+        branchManager.branch = "Arkan";
+        await branchManager.save();
+        console.log("✓ Branch manager account updated: username=manager, password=manager");
+      }
+    } catch (error) {
+      console.error("⚠️  Error creating/updating branch manager:", error.message);
+    }
   })
   .catch((err) => {
     console.error("==========================================");
