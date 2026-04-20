@@ -111,8 +111,9 @@ export async function createStaff(req, res) {
     }
 
     const isAreaManager = title === 'Area Manager';
+    const isOperationsManagerTitle = title === 'Operations Manager';
     const requiredFields = !name || !username || !password || !dateOfBirth || !employeeCode || !title || !phoneNumber || !idNumber || !startDate;
-    const branchRequired = !isAreaManager && !branch;
+    const branchRequired = !isAreaManager && !isOperationsManagerTitle && !branch;
     if (requiredFields || branchRequired) {
       return res.status(400).json({ error: 'Missing required fields' });
     }

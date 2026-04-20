@@ -101,7 +101,7 @@ function Login() {
           <div className="space-y-1">
             <p className="font-mono text-xs">Owner (Branch Overview): owner / owner</p>
             <p className="font-mono text-xs">HR (Staff List): hr / hr</p>
-            <p className="font-mono text-xs text-brand-600 font-bold">Manager (Full Dashboard + 📦💰): manager / manager</p>
+            <p className="font-mono text-xs text-brand-600 font-bold">Manager (Full Dashboard): manager / manager</p>
           </div>
         </div>
       </div>

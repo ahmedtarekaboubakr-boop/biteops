@@ -8,7 +8,6 @@ import Schedule from './Schedule'
 import Tutorials from './Tutorials'
 import Rating from './Rating'
 import Requests from './Requests'
-import Attendance from './Attendance'
 import Penalties from './Penalties'
 import DailyChecklist from './DailyChecklist'
 import LanguageToggle from './LanguageToggle'
@@ -17,8 +16,6 @@ import Announcements from './Announcements'
 import BranchManagement from './BranchManagement'
 import Leaderboard from './Leaderboard'
 import Maintenance from './Maintenance'
-import Inventory from './Inventory'
-import Transactions from './Transactions'
 
 function ManagerDashboard() {
   const { user, logout } = useAuth()
@@ -188,16 +185,6 @@ function ManagerDashboard() {
               {t('performance')}
             </button>
             <button
-              onClick={() => setActiveTab('attendance')}
-              className={`${
-                activeTab === 'attendance'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('attendance')}
-            </button>
-            <button
               onClick={() => setActiveTab('requests')}
               className={`${
                 activeTab === 'requests'
@@ -269,32 +256,6 @@ function ManagerDashboard() {
                 Maintenance
               </button>
             )}
-            {/* Inventory - for branch managers */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('inventory')}
-                className={`${
-                  activeTab === 'inventory'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                📦 Inventory
-              </button>
-            )}
-            {/* Transactions - for branch managers */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('transactions')}
-                className={`${
-                  activeTab === 'transactions'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                💰 Transactions
-              </button>
-            )}
             {/* Announcements tab */}
             <button
               onClick={() => setActiveTab('announcements')}
@@ -352,9 +313,6 @@ function ManagerDashboard() {
         {/* Schedule Tab - read-only for HR */}
         {activeTab === 'schedule' && <Schedule staff={staff} readOnly={isHR} />}
 
-        {/* Attendance Tab - read-only for HR */}
-        {activeTab === 'attendance' && <Attendance staff={staff} readOnly={isHR} />}
-
         {/* Rating Tab - read-only for HR */}
         {activeTab === 'rating' && <Rating readOnly={isHR} />}
 
@@ -376,12 +334,6 @@ function ManagerDashboard() {
 
         {/* Maintenance Tab - for branch managers and operations managers */}
         {activeTab === 'maintenance' && !isHR && <Maintenance />}
-
-        {/* Inventory Tab - for branch managers */}
-        {activeTab === 'inventory' && !isHR && <Inventory />}
-
-        {/* Transactions Tab - for branch managers */}
-        {activeTab === 'transactions' && !isHR && <Transactions />}
 
         {/* Announcements Tab */}
         {activeTab === 'announcements' && <Announcements />}

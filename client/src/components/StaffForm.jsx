@@ -596,28 +596,37 @@ function StaffForm({ staff, onClose, onSuccess }) {
               />
             </div>
 
-            {/* Branch field - hidden for Area Managers */}
+            {/* Branch field - hidden for Area Managers; optional for Operations Manager */}
             {formData.title !== 'Area Manager' && (
               <div>
                 <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
-                  Branch <span className="text-red-500">*</span>
+                  Branch
+                  {formData.title !== 'Operations Manager' && <span className="text-red-500"> *</span>}
+                  {formData.title === 'Operations Manager' && (
+                    <span className="text-gray-500 font-normal"> (optional)</span>
+                  )}
                 </label>
                 <select
                   id="branch"
                   name="branch"
                   value={formData.branch}
                   onChange={handleChange}
-                  required
+                  required={formData.title !== 'Operations Manager'}
                   disabled={user?.role === 'manager' && !staff} // Disable for managers when creating (auto-filled)
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select branch</option>
+                  <option value="">
+                    {formData.title === 'Operations Manager' ? 'None / assign later' : 'Select branch'}
+                  </option>
                   {branches.map((branch) => (
                     <option key={branch} value={branch}>
                       {branch}
                     </option>
                   ))}
                 </select>
+                {formData.title === 'Operations Manager' && (
+                  <p className="mt-1 text-xs text-gray-500">You can leave this empty and assign a branch later.</p>
+                )}
                 {user?.role === 'manager' && !staff && (
                   <p className="mt-1 text-xs text-gray-500">Branch is automatically set to your branch</p>
                 )}

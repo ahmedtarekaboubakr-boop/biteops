@@ -183,29 +183,30 @@ async function initializeApp() {
     console.log('✓ All API routes loaded successfully');
     console.log('==========================================');
     console.log('');
+    
+    // ======================
+    // STEP 4: CATCH-ALL FOR SPA (Must be after API routes!)
+    // ======================
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+      }
+      
+      const indexPath = join(__dirname, 'dist', 'index.html');
+      if (existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        console.log('⚠️  Request to', req.path, '- dist/index.html not found');
+        res.status(404).send('Frontend not available. API is running at /api/*');
+      }
+    });
+    
   } catch (error) {
     console.error('❌ Error during initialization:', error.message);
     console.error('Stack:', error.stack);
     console.error('Some features may not work correctly.');
   }
 }
-
-// ======================
-// STEP 4: CATCH-ALL FOR SPA
-// ======================
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' });
-  }
-  
-  const indexPath = join(__dirname, 'dist', 'index.html');
-  if (existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    console.log('⚠️  Request to', req.path, '- dist/index.html not found');
-    res.status(404).send('Frontend not available. API is running at /api/*');
-  }
-});
 
 // ======================
 // STEP 5: ERROR HANDLING

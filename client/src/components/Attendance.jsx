@@ -103,10 +103,6 @@ function Attendance({ staff, readOnly = false }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Attendance</h2>
-      </div>
-
       {/* Read-only indicator for HR */}
       {readOnly && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
