@@ -5,12 +5,6 @@ import { useAuth } from '../context/AuthContext'
 
 const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
 
-// Area manager branch assignments
-const AREA_MANAGER_BRANCHES = {
-  '1663': ['Mivida', 'Leven', 'Sodic Villete'],
-  '1618': ['Arkan', 'Palm Hills']
-}
-
 // Station configuration - same for all branches, no max limits
 const STATIONS = [
   { id: 'manager', label: 'Manager', icon: '👔' },
@@ -46,13 +40,15 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   const [showStaffSelector, setShowStaffSelector] = useState(false)
   const [selectedStation, setSelectedStation] = useState(null)
   const [swapMode, setSwapMode] = useState(null)
-  const [selectedBranch, setSelectedBranch] = useState(readOnly ? BRANCHES[0] : null)
+  const [selectedBranch, setSelectedBranch] = useState(null)
   const [submissionStatus, setSubmissionStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
   const [userBranch, setUserBranch] = useState(null)
   const [editMode, setEditMode] = useState(false)
+  const [branches, setBranches] = useState([])
+  const [areaManagerBranches, setAreaManagerBranches] = useState([])
 
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const shifts = [
@@ -60,29 +56,39 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     { id: 'middle', label: 'Middle', time: '13:00 - 21:00', color: 'bg-blue-100 border-blue-300' },
     { id: 'night', label: 'Night', time: '16:00 - 00:30', color: 'bg-purple-100 border-purple-300' }
   ]
-
-  // Get area manager's assigned branches
-  const areaManagerBranches = isAreaManager && user?.employeeCode 
-    ? (AREA_MANAGER_BRANCHES[user.employeeCode] || [])
-    : []
   
   // Operations manager sees all branches
-  const operationsManagerBranches = BRANCHES
+  const operationsManagerBranches = branches.length > 0 ? branches.map(b => b.name) : BRANCHES
+
+  // Fetch branches from API
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/branches`)
+        setBranches(response.data || [])
+        
+        // Filter branches for area managers based on their area
+        if (isAreaManager && user?.area) {
+          const filtered = response.data.filter(b => b.area === user.area)
+          const branchNames = filtered.map(b => b.name)
+          setAreaManagerBranches(branchNames)
+        }
+      } catch (error) {
+        console.error('Failed to fetch branches:', error)
+        // Fallback to static branches if API fails
+        setBranches(BRANCHES.map(name => ({ name, area: null })))
+      }
+    }
+    
+    fetchBranches()
+  }, [isAreaManager, user?.area])
 
   // Update userBranch when user changes
   useEffect(() => {
     if (user?.branch) {
       setUserBranch(user.branch)
     }
-    // Set default selected branch for area manager
-    if (isAreaManager && areaManagerBranches.length > 0 && !selectedBranch) {
-      setSelectedBranch(areaManagerBranches[0])
-    }
-    // Set default selected branch for operations manager
-    if (isOperationsManager && !selectedBranch) {
-      setSelectedBranch(BRANCHES[0])
-    }
-  }, [user, isAreaManager, isOperationsManager, areaManagerBranches])
+  }, [user])
 
   // Check if current user's branch has stations (for regular managers) or selected branch (for area/ops managers)
   const activeBranch = (isAreaManager || isOperationsManager) ? selectedBranch : userBranch
@@ -148,10 +154,10 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
         params: { weekStart: formatDate(start) }
       })
       if (readOnly) {
-        // For HR, get all submissions
+        // For management roles, get all branch publication statuses
         setSubmissionStatus(response.data)
       } else {
-        // For manager, get their branch submission
+        // For branch manager, get their branch publication status
         setSubmissionStatus(response.data[0] || null)
       }
     } catch (error) {
@@ -178,8 +184,8 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     }
     
     const confirmMessage = isEdit 
-      ? 'Save your changes and notify HR?' 
-      : 'Are you sure you want to submit this schedule to HR?'
+      ? 'Save your changes and publish the updated schedule?' 
+      : 'Are you sure you want to publish this schedule? It will be visible to your staff, area manager, and management.'
     if (!window.confirm(confirmMessage)) return
     
     setSubmitting(true)
@@ -190,7 +196,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
         weekEnd: formatDate(end),
         isEdit: isEdit
       })
-      alert(isEdit ? 'Changes saved successfully!' : 'Schedule submitted successfully!')
+      alert(isEdit ? 'Changes saved and published successfully!' : 'Schedule published successfully!')
       fetchSubmissionStatus()
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to submit schedule')
@@ -253,7 +259,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
 
   const handleCellClick = (date, shift) => {
     if (readOnly) return
-    // Only allow editing if not submitted OR in edit mode
+    // Only allow editing if not published OR in edit mode
     if (submissionStatus?.status && !editMode) return
     setSelectedCell({ date, shift })
     setSelectedStation(null)
@@ -286,7 +292,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   }
 
   const handleRemoveStaff = async (scheduleId) => {
-    // Only allow removing if not submitted OR in edit mode
+    // Only allow removing if not published OR in edit mode
     if (submissionStatus?.status && !editMode) return
     if (!window.confirm('Remove this staff member from this shift?')) return
 
@@ -300,7 +306,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
 
   const handleStartSwap = (schedule, e) => {
     e.stopPropagation()
-    // Only allow swapping if not submitted OR in edit mode
+    // Only allow swapping if not published OR in edit mode
     if (submissionStatus?.status && !editMode) return
     setSwapMode({
       scheduleId: schedule.id,
@@ -359,28 +365,162 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     return null
   }
 
+  const isMultiBranchViewer = readOnly || isAreaManager || isOperationsManager
+  const showScheduleContent = !isMultiBranchViewer || selectedBranch
+  const branchTabList = isOperationsManager
+    ? operationsManagerBranches
+    : isAreaManager
+      ? areaManagerBranches
+      : BRANCHES
+
   return (
     <div className="space-y-6">
-      {/* Week Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-3">
         <h2 className="text-3xl font-bold text-gray-900">Weekly Schedule</h2>
-        <div className="flex items-center gap-4">
-          {/* Notifications Bell for HR */}
-          {readOnly && (
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors relative"
-              >
-                <span className="text-xl">🔔</span>
-                {unreadNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadNotifications.length}
-                  </span>
-                )}
-              </button>
+        {readOnly && (
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors relative"
+            >
+              <span className="text-xl">🔔</span>
+              {unreadNotifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {unreadNotifications.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Location first: Owner, HR, Area Manager, Operations Manager must choose a branch before the grid */}
+      {isMultiBranchViewer && (
+        <div className="space-y-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <span className="text-gray-600">
+              {readOnly
+                ? '📋 View Only - Schedules are created by Branch Managers'
+                : isOperationsManager
+                  ? '📋 Operations Manager View - Viewing analytics for all branches'
+                  : '📋 Area Manager View - Viewing schedules for your assigned branches'}
+            </span>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-3">
+            <p className="text-sm font-medium text-gray-700 mb-2">Location</p>
+            <div className="flex flex-wrap gap-2">
+              {branchTabList.map((branch) => {
+                const branchSubmission = getSubmissionForBranch(branch)
+                return (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() => setSelectedBranch(branch)}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+                      selectedBranch === branch
+                        ? 'bg-brand text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {branch}
+                    {branchSubmission && (
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          branchSubmission.status === 'submitted'
+                            ? 'bg-green-500'
+                            : branchSubmission.status === 'edited'
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-400'
+                        }`}
+                      />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {!selectedBranch && (
+            <div className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              Select a location to view the schedule.
             </div>
           )}
+
+          {selectedBranch && (() => {
+            const branchSubmission = getSubmissionForBranch(selectedBranch)
+            return (
+              <div
+                className={`rounded-lg p-4 flex items-center justify-between ${
+                  branchSubmission?.status === 'edited'
+                    ? 'bg-yellow-50 border-2 border-yellow-300'
+                    : branchSubmission?.status === 'submitted'
+                      ? 'bg-green-50 border-2 border-green-300'
+                      : 'bg-brand-50 border border-brand-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🏪</span>
+                  <div>
+                    <span
+                      className={`font-semibold text-lg ${
+                        branchSubmission?.status === 'edited'
+                          ? 'text-yellow-900'
+                          : branchSubmission?.status === 'submitted'
+                            ? 'text-green-900'
+                            : 'text-gray-800'
+                      }`}
+                    >
+                      {selectedBranch} Branch Schedule
+                    </span>
+                    {branchSubmission && (
+                      <p
+                        className={`text-sm mt-1 ${
+                          branchSubmission.status === 'edited'
+                            ? 'text-yellow-800 font-medium'
+                            : branchSubmission.status === 'submitted'
+                              ? 'text-green-800'
+                              : 'text-gray-600'
+                        }`}
+                      >
+                        {branchSubmission.status === 'edited'
+                          ? `⚠️ Updated after publishing by ${branchSubmission.manager_name} on ${new Date(branchSubmission.last_edited_at || branchSubmission.submitted_at).toLocaleDateString()}`
+                          : branchSubmission.status === 'submitted'
+                            ? `✅ Published by ${branchSubmission.manager_name} on ${new Date(branchSubmission.submitted_at).toLocaleDateString()}`
+                            : 'Not published'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {branchSubmission ? (
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      branchSubmission.status === 'edited'
+                        ? 'bg-yellow-200 text-yellow-900 border border-yellow-400'
+                        : branchSubmission.status === 'submitted'
+                          ? 'bg-green-200 text-green-900 border border-green-400'
+                          : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {branchSubmission.status === 'edited'
+                      ? '⚠ Updated'
+                      : branchSubmission.status === 'submitted'
+                        ? '✓ Published'
+                        : 'Pending'}
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-500">Not Published</span>
+                )}
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
+      {showScheduleContent && (
+        <>
+      {/* Week Navigation */}
+      <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-4">
           <button
             onClick={previousWeek}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -402,7 +542,6 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
           >
             Next →
           </button>
-        </div>
       </div>
 
       {/* Notifications Panel for HR */}
@@ -433,7 +572,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`w-2 h-2 rounded-full ${notification.type === 'schedule_submitted' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
                         <span className="text-xs font-medium text-gray-500 uppercase">
-                          {notification.type === 'schedule_submitted' ? 'Submitted' : 'Edited'}
+                          {notification.type === 'schedule_submitted' ? 'Published' : 'Updated'}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{notification.message}</p>
@@ -500,9 +639,9 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               <>
                 <span className="text-2xl">✅</span>
                 <div>
-                  <p className="font-semibold text-green-800">Schedule Submitted</p>
+                  <p className="font-semibold text-green-800">Schedule Published</p>
                   <p className="text-sm text-green-600">
-                    Submitted on {new Date(submissionStatus.submitted_at).toLocaleString()}
+                    Published on {new Date(submissionStatus.submitted_at).toLocaleString()} - Visible to your team and management
                   </p>
                 </div>
               </>
@@ -510,9 +649,9 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               <>
                 <span className="text-2xl">⚠️</span>
                 <div>
-                  <p className="font-semibold text-yellow-800">Schedule Edited After Submission</p>
+                  <p className="font-semibold text-yellow-800">Schedule Updated After Publishing</p>
                   <p className="text-sm text-yellow-600">
-                    HR has been notified of the changes
+                    Management has been notified of the changes
                   </p>
                 </div>
               </>
@@ -520,9 +659,9 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               <>
                 <span className="text-2xl">📤</span>
                 <div>
-                  <p className="font-semibold text-blue-800">Ready to Submit</p>
+                  <p className="font-semibold text-blue-800">Ready to Publish</p>
                   <p className="text-sm text-blue-600">
-                    Submit your schedule to notify HR when complete
+                    Publish your schedule to make it visible to your team and management
                   </p>
                 </div>
               </>
@@ -530,13 +669,13 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
           </div>
           {/* Button logic based on state */}
           {!submissionStatus?.status ? (
-            // Not yet submitted - show Submit button
+            // Not yet published - show Publish button
             <button
               onClick={() => handleSubmitSchedule(false)}
               disabled={submitting || schedules.length === 0}
               className="px-6 py-2 rounded-lg font-semibold transition-colors bg-brand text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Submitting...' : 'Submit to HR'}
+              {submitting ? 'Publishing...' : 'Publish Schedule'}
             </button>
           ) : editMode ? (
             // In edit mode - show Done button
@@ -552,7 +691,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               <span>{submitting ? 'Saving...' : 'Done'}</span>
             </button>
           ) : (
-            // Submitted but not in edit mode - show Edit Schedule button
+            // Published but not in edit mode - show Edit Schedule button
             <button
               onClick={() => {
                 setEditMode(true)
@@ -564,111 +703,6 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               <span>Edit Schedule</span>
             </button>
           )}
-        </div>
-      )}
-
-      {/* Read-only indicator and Branch Selector for HR, Area Managers, and Operations Managers */}
-      {(readOnly || isAreaManager || isOperationsManager) && (
-        <div className="space-y-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <span className="text-gray-600">
-              {readOnly 
-                ? '📋 View Only - Schedules are created by Branch Managers'
-                : isOperationsManager
-                  ? '📋 Operations Manager View - Viewing analytics for all branches'
-                  : '📋 Area Manager View - Viewing schedules for your assigned branches'
-              }
-            </span>
-          </div>
-          
-          {/* Branch Tabs with Submission Status */}
-          <div className="bg-white rounded-xl shadow-sm p-3">
-            <div className="flex flex-wrap gap-2">
-              {(isOperationsManager ? operationsManagerBranches : isAreaManager ? areaManagerBranches : BRANCHES).map((branch) => {
-                const branchSubmission = getSubmissionForBranch(branch)
-                return (
-                  <button
-                    key={branch}
-                    onClick={() => setSelectedBranch(branch)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
-                      selectedBranch === branch
-                        ? 'bg-brand text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {branch}
-                    {branchSubmission && (
-                      <span className={`w-2 h-2 rounded-full ${
-                        branchSubmission.status === 'submitted' 
-                          ? 'bg-green-500' 
-                          : branchSubmission.status === 'edited'
-                            ? 'bg-yellow-500'
-                            : 'bg-gray-400'
-                      }`}></span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Current Branch Header with Submission Status */}
-          {(() => {
-            const branchSubmission = getSubmissionForBranch(selectedBranch)
-            return (
-              <div className={`rounded-lg p-4 flex items-center justify-between ${
-                branchSubmission?.status === 'edited'
-                  ? 'bg-yellow-50 border-2 border-yellow-300'
-                  : branchSubmission?.status === 'submitted' 
-                    ? 'bg-green-50 border-2 border-green-300'
-                    : 'bg-brand-50 border border-brand-200'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏪</span>
-                  <div>
-                    <span className={`font-semibold text-lg ${
-                      branchSubmission?.status === 'edited'
-                        ? 'text-yellow-900'
-                        : branchSubmission?.status === 'submitted'
-                          ? 'text-green-900'
-                          : 'text-gray-800'
-                    }`}>{selectedBranch} Branch Schedule</span>
-                    {branchSubmission && (
-                      <p className={`text-sm mt-1 ${
-                        branchSubmission.status === 'edited'
-                          ? 'text-yellow-800 font-medium'
-                          : branchSubmission.status === 'submitted'
-                            ? 'text-green-800'
-                            : 'text-gray-600'
-                      }`}>
-                        {branchSubmission.status === 'edited'
-                          ? `⚠️ Edited after submission by ${branchSubmission.manager_name} on ${new Date(branchSubmission.last_edited_at || branchSubmission.submitted_at).toLocaleDateString()}`
-                          : branchSubmission.status === 'submitted'
-                            ? `✅ Submitted by ${branchSubmission.manager_name} on ${new Date(branchSubmission.submitted_at).toLocaleDateString()}`
-                            : 'Not submitted'
-                        }
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {branchSubmission ? (
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    branchSubmission.status === 'edited'
-                      ? 'bg-yellow-200 text-yellow-900 border border-yellow-400'
-                      : branchSubmission.status === 'submitted'
-                        ? 'bg-green-200 text-green-900 border border-green-400'
-                        : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {branchSubmission.status === 'edited' ? '⚠ Edited' : branchSubmission.status === 'submitted' ? '✓ Submitted' : 'Pending'}
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-500">
-                    Not Submitted
-                  </span>
-                )}
-              </div>
-            )
-          })()}
         </div>
       )}
 
@@ -816,6 +850,8 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
             </table>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* Staff Selector Modal */}

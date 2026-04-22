@@ -44,7 +44,7 @@ function resolveStaffLeaderboardBranchFilter(me, queryBranch) {
 
 export async function getStaffLeaderboard(req, res) {
   try {
-    const { days, branch: branchQuery } = req.query;
+    const { days, branch: branchQuery, area: areaQuery } = req.query;
     const daysNum = days === 'all' ? null : parseInt(days) || 30;
 
     const dateFilter = daysNum ? (() => {
@@ -58,17 +58,28 @@ export async function getStaffLeaderboard(req, res) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    const branchFilter = resolveStaffLeaderboardBranchFilter(me, branchQuery);
-    if (branchFilter && typeof branchFilter === 'object' && branchFilter.error === 'forbidden') {
-      return res.status(403).json({ error: branchFilter.message });
-    }
-    if (branchFilter === null) {
-      if (me.role === 'area_manager') {
-        return res.status(400).json({ error: 'No branches assigned to your area' });
+    // Handle area filtering for owner/HR/Operations Manager
+    let branchFilter;
+    if (areaQuery && (me.role === 'owner' || hasHRPrivileges(me.role) || me.role === 'operations_manager')) {
+      const areaBranches = getAreaManagerBranches(areaQuery);
+      if (areaBranches.length > 0) {
+        branchFilter = { $in: areaBranches };
+      } else {
+        return res.status(400).json({ error: 'Invalid area specified' });
       }
-      return res.status(400).json({
-        error: 'Branch not found. Set your branch on your profile or contact HR.',
-      });
+    } else {
+      branchFilter = resolveStaffLeaderboardBranchFilter(me, branchQuery);
+      if (branchFilter && typeof branchFilter === 'object' && branchFilter.error === 'forbidden') {
+        return res.status(403).json({ error: branchFilter.message });
+      }
+      if (branchFilter === null) {
+        if (me.role === 'area_manager') {
+          return res.status(400).json({ error: 'No branches assigned to your area' });
+        }
+        return res.status(400).json({
+          error: 'Branch not found. Set your branch on your profile or contact HR.',
+        });
+      }
     }
 
     const staff = await User.find({
@@ -143,6 +154,7 @@ export async function getStaffLeaderboard(req, res) {
         staff_id: staffId.toString(),
         staff_name: staffMember.name,
         employee_code: staffMember.employee_code,
+        branch: staffMember.branch || null,
         avg_performance: ratings?.avg_performance || null,
         avg_total_score: ratings?.avg_total_score || null,
         attendance_rate: attendance && attendance.total_days > 0

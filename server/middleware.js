@@ -33,6 +33,14 @@ export const requireManager = (req, res, next) => {
   next();
 };
 
+export const requireManagerOrStaff = (req, res, next) => {
+  const allowedRoles = ['staff', 'manager', 'hr_manager', 'operations_manager', 'area_manager', 'owner'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
+  next();
+};
+
 export const requireHR = (req, res, next) => {
   if (req.user.role !== 'hr_manager' && req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Access denied. HR Manager or Owner role required.' });

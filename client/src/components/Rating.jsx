@@ -5,16 +5,11 @@ import { useAuth } from '../context/AuthContext'
 
 const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
 
-// Area manager branch assignments
-const AREA_MANAGER_BRANCHES = {
-  '1663': ['Mivida', 'Leven', 'Sodic Villete'],
-  '1618': ['Arkan', 'Palm Hills']
-}
-
 function Rating({ readOnly: propReadOnly = false }) {
   const { user } = useAuth()
   
   // Operations Manager and Area Manager are always read-only
+  const isOwner = user?.role === 'owner'
   const isAreaManager = user?.role === 'area_manager'
   const isOperationsManager = user?.role === 'operations_manager'
   const readOnly = propReadOnly || isAreaManager || isOperationsManager
@@ -38,25 +33,22 @@ function Rating({ readOnly: propReadOnly = false }) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [attendanceRecords, setAttendanceRecords] = useState({}) // staffId -> attendance record
   const [currentTime, setCurrentTime] = useState(new Date())
-  
-  // Get area manager's assigned branches
-  const areaManagerBranches = isAreaManager && user?.employeeCode 
-    ? (AREA_MANAGER_BRANCHES[user.employeeCode] || [])
-    : []
+  const [branches, setBranches] = useState([])
+  const [areaManagerBranches, setAreaManagerBranches] = useState([])
   
   // Determine which branches to show
-  const visibleBranches = isOperationsManager 
-    ? BRANCHES 
+  const visibleBranches = isOwner || isOperationsManager 
+    ? (branches.length > 0 ? branches.map(b => b.name) : BRANCHES)
     : isAreaManager 
-      ? areaManagerBranches.filter(b => BRANCHES.includes(b) || b === 'Sodic')
+      ? areaManagerBranches
       : BRANCHES
   
   const [selectedBranch, setSelectedBranch] = useState(visibleBranches[0] || BRANCHES[0])
 
   const today = new Date().toISOString().split('T')[0]
   
-  // Show branch tabs for HR (readOnly), Operations Manager, or Area Manager
-  const showBranchTabs = readOnly || isOperationsManager || isAreaManager
+  // Show branch tabs for Owner, HR (readOnly), Operations Manager, or Area Manager
+  const showBranchTabs = isOwner || readOnly || isOperationsManager || isAreaManager
 
   const hygieneGroomingCriteria = [
     { id: 'nailsCut', label: 'Nails Cut', icon: '💅' },
@@ -239,6 +231,34 @@ function Rating({ readOnly: propReadOnly = false }) {
       setHistoryLoading(false)
     }
   }
+
+  // Fetch branches from API
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/branches`)
+        setBranches(response.data || [])
+        
+        // Filter branches for area managers based on their area
+        if (isAreaManager && user?.area) {
+          const filtered = response.data.filter(b => b.area === user.area)
+          const branchNames = filtered.map(b => b.name)
+          setAreaManagerBranches(branchNames)
+          
+          // Set default selected branch for area manager
+          if (branchNames.length > 0) {
+            setSelectedBranch(branchNames[0])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch branches:', error)
+        // Fallback to static branches if API fails
+        setBranches(BRANCHES.map(name => ({ name, area: null })))
+      }
+    }
+    
+    fetchBranches()
+  }, [isAreaManager, user?.area])
 
   useEffect(() => {
     fetchScheduledStaff()
@@ -584,12 +604,12 @@ function Rating({ readOnly: propReadOnly = false }) {
               <div>
                 <p className="text-brand-100 text-sm">Rating for</p>
                 <h3 className="text-2xl font-bold">{formatDateDisplay(selectedDate)}</h3>
-                {readOnly && <p className="text-brand-100 text-sm mt-1">📍 {selectedBranch} Branch</p>}
+                {showBranchTabs && <p className="text-brand-100 text-sm mt-1">📍 {selectedBranch} Branch</p>}
               </div>
               <div className="text-right">
-                <p className="text-brand-100 text-sm">{readOnly ? `Staff in ${selectedBranch}` : 'Staff Scheduled'}</p>
+                <p className="text-brand-100 text-sm">{showBranchTabs ? `Staff in ${selectedBranch}` : 'Staff Scheduled'}</p>
                 <p className="text-3xl font-bold">
-                  {readOnly 
+                  {showBranchTabs 
                     ? scheduledStaff.filter(s => s.branch === selectedBranch).length 
                     : scheduledStaff.length}
                 </p>
@@ -661,11 +681,12 @@ function Rating({ readOnly: propReadOnly = false }) {
             </div>
           </div>
 
-          {/* Branch Tabs for HR, Operations Manager, and Area Manager */}
+          {/* Branch Tabs for Owner, HR, Operations Manager, and Area Manager */}
           {showBranchTabs && (
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="mb-2 text-sm text-gray-500">
-                {isOperationsManager ? '📊 Operations Manager View - All Branches' : 
+                {isOwner ? '👑 Owner View - All Branches' :
+                 isOperationsManager ? '📊 Operations Manager View - All Branches' : 
                  isAreaManager ? '📊 Area Manager View - Assigned Branches' : 
                  '📊 HR View - All Branches'}
               </div>
@@ -707,14 +728,14 @@ function Rating({ readOnly: propReadOnly = false }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Filter staff by branch for HR view */}
-              {(readOnly ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff).length === 0 && readOnly ? (
+              {/* Filter staff by branch for multi-branch view */}
+              {(showBranchTabs ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff).length === 0 && showBranchTabs ? (
                 <div className="bg-white rounded-xl shadow-sm p-12 text-center">
                   <div className="text-6xl mb-4">📋</div>
                   <h3 className="text-xl font-semibold text-gray-700 mb-2">No Staff in {selectedBranch}</h3>
                   <p className="text-gray-500">No staff were scheduled for this branch on this date</p>
               </div>
-              ) : (readOnly ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff).map((staff) => {
+              ) : (showBranchTabs ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff).map((staff) => {
                 const staffId = staff.staff_id
                 if (!ratings[staffId]) {
                   initializeRating(staffId)
@@ -950,7 +971,7 @@ function Rating({ readOnly: propReadOnly = false }) {
 
               {/* Daily Analytics Summary */}
               {(() => {
-                const branchStaff = readOnly 
+                const branchStaff = showBranchTabs 
                   ? scheduledStaff.filter(s => s.branch === selectedBranch) 
                   : scheduledStaff
                 
@@ -992,7 +1013,7 @@ function Rating({ readOnly: propReadOnly = false }) {
                       <div>
                         <h3 className="text-xl font-bold">Daily Performance Analytics</h3>
                         <p className="text-gray-400 text-sm">
-                          {readOnly ? `${selectedBranch} Branch` : 'Your Branch'} • {formatDateDisplay(selectedDate)}
+                          {showBranchTabs ? `${selectedBranch} Branch` : 'Your Branch'} • {formatDateDisplay(selectedDate)}
                         </p>
                       </div>
                     </div>

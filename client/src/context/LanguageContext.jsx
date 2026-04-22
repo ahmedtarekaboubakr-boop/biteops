@@ -26,6 +26,13 @@ export const translations = {
     dailyChecklist: 'Daily Checklist',
     tutorials: 'Tutorials',
     logout: 'Logout',
+    changePassword: 'Change password',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmNewPassword: 'Confirm new password',
+    updatePassword: 'Update password',
+    passwordsDoNotMatch: 'New passwords do not match',
+    passwordChangeSuccess: 'Your password was updated successfully',
     
     // Common
     save: 'Save',
@@ -178,6 +185,13 @@ export const translations = {
     dailyChecklist: 'قائمة المهام اليومية',
     tutorials: 'الدروس',
     logout: 'تسجيل الخروج',
+    changePassword: 'تغيير كلمة المرور',
+    currentPassword: 'كلمة المرور الحالية',
+    newPassword: 'كلمة المرور الجديدة',
+    confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
+    updatePassword: 'تحديث كلمة المرور',
+    passwordsDoNotMatch: 'كلمات المرور الجديدة غير متطابقة',
+    passwordChangeSuccess: 'تم تحديث كلمة المرور بنجاح',
     
     // Common
     save: 'حفظ',

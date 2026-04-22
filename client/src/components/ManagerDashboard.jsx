@@ -9,13 +9,12 @@ import Tutorials from './Tutorials'
 import Rating from './Rating'
 import Requests from './Requests'
 import Penalties from './Penalties'
-import DailyChecklist from './DailyChecklist'
-import LanguageToggle from './LanguageToggle'
 import AnnouncementBanner from './AnnouncementBanner'
 import Announcements from './Announcements'
 import BranchManagement from './BranchManagement'
 import Leaderboard from './Leaderboard'
-import Maintenance from './Maintenance'
+import ChangePasswordModal from './ChangePasswordModal'
+import Sidebar from './Sidebar'
 
 function ManagerDashboard() {
   const { user, logout } = useAuth()
@@ -38,6 +37,7 @@ function ManagerDashboard() {
   const [showForm, setShowForm] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
     fetchStaff()
@@ -106,175 +106,54 @@ function ManagerDashboard() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">JJ's</h1>
-              <p className="text-sm text-gray-600">{getRoleDisplayName()} Dashboard</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageToggle />
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {t('logout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+  // Build tabs based on role
+  const tabs = []
+  if (isHR) {
+    tabs.push({ id: 'staff', label: t('staff') })
+    tabs.push({ id: 'branches', label: 'Branches' })
+  }
+  tabs.push({ id: 'schedule', label: t('schedule') })
+  tabs.push({ id: 'rating', label: t('performance') })
+  tabs.push({ id: 'requests', label: t('requests') })
+  tabs.push({ id: 'penalties', label: t('penalties') })
+  if (!isHR) {
+    tabs.push({ id: 'tutorials', label: t('tutorials') })
+    tabs.push({ id: 'leaderboard', label: 'Leaderboard' })
+  }
+  tabs.push({ id: 'announcements', label: 'Announcements' })
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Announcement Banner */}
-        <AnnouncementBanner />
-        
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            {/* Staff tab - only visible to HR Manager */}
-            {isHR && (
-              <button
-                onClick={() => setActiveTab('staff')}
-                className={`${
-                  activeTab === 'staff'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {t('staff')}
-              </button>
-            )}
-            {/* Branches tab - only visible to HR Manager */}
-            {isHR && (
-              <button
-                onClick={() => setActiveTab('branches')}
-                className={`${
-                  activeTab === 'branches'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Branches
-              </button>
-            )}
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`${
-                activeTab === 'schedule'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('schedule')}
-            </button>
-            <button
-              onClick={() => setActiveTab('rating')}
-              className={`${
-                activeTab === 'rating'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('performance')}
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`${
-                activeTab === 'requests'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('requests')}
-            </button>
-            <button
-              onClick={() => setActiveTab('penalties')}
-              className={`${
-                activeTab === 'penalties'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('penalties')}
-            </button>
-            {/* Tutorials tab - hidden for HR */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('tutorials')}
-                className={`${
-                  activeTab === 'tutorials'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {t('tutorials')}
-              </button>
-            )}
-            {/* Daily Checklist - only for branch managers */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('checklist')}
-                className={`${
-                  activeTab === 'checklist'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {t('dailyChecklist')}
-              </button>
-            )}
-            {/* Leaderboard - only for branch managers */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('leaderboard')}
-                className={`${
-                  activeTab === 'leaderboard'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Leaderboard
-              </button>
-            )}
-            {/* Maintenance - for branch managers and operations managers */}
-            {!isHR && (
-              <button
-                onClick={() => setActiveTab('maintenance')}
-                className={`${
-                  activeTab === 'maintenance'
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Maintenance
-              </button>
-            )}
-            {/* Announcements tab */}
-            <button
-              onClick={() => setActiveTab('announcements')}
-              className={`${
-                activeTab === 'announcements'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Announcements
-            </button>
-          </nav>
-        </div>
+  return (
+    <div className="min-h-screen bg-[#f5f5f0]">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
+        user={user}
+        onChangePassword={() => setShowChangePassword(true)}
+        onLogout={logout}
+      />
+
+      {/* Main Content with left margin for sidebar */}
+      <div className="ml-56">
+        {/* Header */}
+        <header className="bg-[#f5f5f0] border-b border-gray-300 px-8 py-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">JJ's</h1>
+            <p className="text-base text-gray-600 mt-1">{getRoleDisplayName()} Dashboard</p>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="px-8 py-6">
+          {/* Announcement Banner */}
+          <AnnouncementBanner />
 
         {/* Staff Tab - Only for HR Manager */}
         {activeTab === 'staff' && isHR && (
           <>
-            <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-3xl font-bold text-gray-900">{t('staff')}</h2>
+            <div className="mb-8 flex justify-between items-center">
+              <h2 className="text-4xl font-bold text-gray-900">{t('staff')}</h2>
               <button
                 onClick={handleCreateStaff}
                 className="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-600 transition-colors shadow-sm"
@@ -325,19 +204,15 @@ function ManagerDashboard() {
         {/* Penalties Tab */}
         {activeTab === 'penalties' && <Penalties staff={staff} />}
 
-        {/* Daily Checklist Tab - only for branch managers */}
-        {activeTab === 'checklist' && !isHR && <DailyChecklist />}
-
-
         {/* Leaderboard Tab - only for branch managers */}
         {activeTab === 'leaderboard' && !isHR && <Leaderboard />}
 
-        {/* Maintenance Tab - for branch managers and operations managers */}
-        {activeTab === 'maintenance' && !isHR && <Maintenance />}
+          {/* Announcements Tab */}
+          {activeTab === 'announcements' && <Announcements />}
+        </main>
+      </div>
 
-        {/* Announcements Tab */}
-        {activeTab === 'announcements' && <Announcements />}
-      </main>
+      <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </div>
   )
 }

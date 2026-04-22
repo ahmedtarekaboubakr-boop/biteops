@@ -34,6 +34,19 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    try {
+      const response = await axios.get(`${API_URL}/api/auth/me`)
+      setUser(response.data)
+    } catch (error) {
+      localStorage.removeItem('token')
+      delete axios.defaults.headers.common['Authorization']
+      setUser(null)
+    }
+  }
+
   const login = async (emailOrUsername, password) => {
     // Determine if it's an email or username
     const isEmail = emailOrUsername.includes('@')
@@ -59,7 +72,8 @@ export function AuthProvider({ children }) {
     user,
     login,
     logout,
-    loading
+    loading,
+    refreshUser
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

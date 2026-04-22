@@ -11,7 +11,16 @@ export async function getSchedules(req, res) {
     const match = {
       date: { $gte: startDate, $lte: endDate }
     };
-    if (req.user.role === 'manager') {
+    
+    // Handle role-based filtering
+    if (req.user.role === 'staff') {
+      // Staff can only see their own branch's schedule
+      const staffUser = await User.findById(req.user.id).select('branch');
+      if (!staffUser || !staffUser.branch) {
+        return res.status(400).json({ error: 'Staff branch not found' });
+      }
+      match.branch = staffUser.branch;
+    } else if (req.user.role === 'manager') {
       const manager = await User.findById(req.user.id).select('branch');
       if (!manager || !manager.branch) {
         return res.status(400).json({ error: 'Manager branch not found' });
@@ -312,7 +321,25 @@ export async function getSchedulesByDate(req, res) {
     const match = {
       date: dateStr
     };
-    if (branch) {
+    
+    // Handle role-based branch filtering
+    if (req.user.role === 'staff') {
+      // Staff can only see their own branch's schedule
+      const staffUser = await User.findById(req.user.id).select('branch');
+      if (!staffUser || !staffUser.branch) {
+        return res.status(400).json({ error: 'Staff branch not found' });
+      }
+      match.branch = staffUser.branch;
+    } else if (branch) {
+      // Owner, HR, Operations Manager can specify branch
+      // Area Manager can specify branch if it's in their area (validated below)
+      if (req.user.role === 'area_manager') {
+        const areaManager = await User.findById(req.user.id).select('area');
+        const assignedBranches = getAreaManagerBranches(areaManager?.area);
+        if (!assignedBranches.includes(branch)) {
+          return res.status(403).json({ error: 'Access denied. This branch is not in your area.' });
+        }
+      }
       match.branch = branch;
     } else if (req.user.role === 'manager') {
       const manager = await User.findById(req.user.id).select('branch');

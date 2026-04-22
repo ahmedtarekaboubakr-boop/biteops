@@ -17,21 +17,25 @@ const GENERIC_RESET_ERROR = 'Invalid or expired reset link';
 
 export async function login(req, res) {
   try {
-    const { username, password } = req.body;
+    const { username, email, password } = req.body;
 
     if (!password) {
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    const normalizedUsername =
-      typeof username === 'string' ? username.trim() : '';
+    const idEmail = typeof email === 'string' ? email.trim() : '';
+    const idUsername = typeof username === 'string' ? username.trim() : '';
+    const loginId = idEmail || idUsername;
 
-    if (!normalizedUsername) {
-      return res.status(400).json({ error: 'Username is required' });
+    if (!loginId) {
+      return res.status(400).json({ error: 'Username or email is required' });
     }
 
     try {
-      const user = await User.findOne({ username: normalizedUsername });
+      const isEmail = loginId.includes('@');
+      const user = isEmail
+        ? await User.findOne({ email: loginId.toLowerCase() })
+        : await User.findOne({ username: loginId });
 
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
@@ -121,8 +125,8 @@ export async function changePassword(req, res) {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
-    if (typeof newPassword !== 'string' || newPassword.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    if (typeof newPassword !== 'string' || newPassword.length === 0) {
+      return res.status(400).json({ error: 'New password is required' });
     }
     if (newPassword === currentPassword) {
       return res.status(400).json({ error: 'New password must be different from current password' });
@@ -240,8 +244,8 @@ export async function resetPasswordWithToken(req, res) {
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ error: GENERIC_RESET_ERROR });
     }
-    if (typeof newPassword !== 'string' || newPassword.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    if (typeof newPassword !== 'string' || newPassword.length === 0) {
+      return res.status(400).json({ error: 'New password is required' });
     }
 
     const hash = hashPasswordResetToken(token.trim());

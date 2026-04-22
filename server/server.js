@@ -204,7 +204,7 @@ async function initializeApp() {
   } catch (error) {
     console.error('❌ Error during initialization:', error.message);
     console.error('Stack:', error.stack);
-    console.error('Some features may not work correctly.');
+    throw error;
   }
 }
 

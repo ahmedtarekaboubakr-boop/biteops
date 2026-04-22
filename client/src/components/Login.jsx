@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
-import LanguageToggle from './LanguageToggle'
 
 function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState('')
@@ -29,12 +28,7 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-red-50 flex items-center justify-center px-4 relative">
-      {/* Language Toggle */}
-      <div className="absolute top-4 right-4">
-        <LanguageToggle />
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-red-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -95,15 +89,6 @@ function Login() {
             {loading ? t('loggingIn') : t('login')}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p className="font-semibold mb-2">{t('defaultCredentials')}</p>
-          <div className="space-y-1">
-            <p className="font-mono text-xs">Owner (Branch Overview): owner / owner</p>
-            <p className="font-mono text-xs">HR (Staff List): hr / hr</p>
-            <p className="font-mono text-xs text-brand-600 font-bold">Manager (Full Dashboard): manager / manager</p>
-          </div>
-        </div>
       </div>
     </div>
   )

@@ -4,139 +4,55 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import axios from 'axios'
 import Tutorials from './Tutorials'
-import LanguageToggle from './LanguageToggle'
 import AnnouncementBanner from './AnnouncementBanner'
 import Announcements from './Announcements'
+import ChangePasswordModal from './ChangePasswordModal'
+import Sidebar from './Sidebar'
 
 function StaffDashboard() {
   const { user, logout } = useAuth()
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('information')
+  const [showChangePassword, setShowChangePassword] = useState(false)
+
+  const tabs = [
+    { id: 'information', label: 'Information' },
+    { id: 'schedule', label: 'Schedule' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'attendance', label: 'Attendance' },
+    { id: 'requests', label: 'Requests' },
+    { id: 'penalties', label: 'Penalties' },
+    { id: 'leaderboard', label: 'Leaderboard' },
+    { id: 'tutorials', label: t('tutorials') },
+    { id: 'announcements', label: 'Announcements' }
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">JJ's</h1>
-              <p className="text-sm text-gray-600">{t('staff')} {t('dashboard')}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageToggle />
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {t('logout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f5f5f0]">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
+        user={user}
+        onChangePassword={() => setShowChangePassword(true)}
+        onLogout={logout}
+      />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Announcement Banner */}
-        <AnnouncementBanner />
-        
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('information')}
-              className={`${
-                activeTab === 'information'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Information
-            </button>
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`${
-                activeTab === 'schedule'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Schedule
-            </button>
-            <button
-              onClick={() => setActiveTab('performance')}
-              className={`${
-                activeTab === 'performance'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Performance
-            </button>
-            <button
-              onClick={() => setActiveTab('attendance')}
-              className={`${
-                activeTab === 'attendance'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Attendance
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`${
-                activeTab === 'requests'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Requests
-            </button>
-            <button
-              onClick={() => setActiveTab('penalties')}
-              className={`${
-                activeTab === 'penalties'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Penalties
-            </button>
-            <button
-              onClick={() => setActiveTab('leaderboard')}
-              className={`${
-                activeTab === 'leaderboard'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Leaderboard
-            </button>
-            <button
-              onClick={() => setActiveTab('tutorials')}
-              className={`${
-                activeTab === 'tutorials'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {t('tutorials')}
-            </button>
-            <button
-              onClick={() => setActiveTab('announcements')}
-              className={`${
-                activeTab === 'announcements'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Announcements
-            </button>
-          </nav>
-        </div>
+      {/* Main Content with left margin for sidebar */}
+      <div className="ml-56">
+        {/* Header */}
+        <header className="bg-[#f5f5f0] border-b border-gray-300 px-8 py-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">JJ's</h1>
+            <p className="text-base text-gray-600 mt-1">{t('staff')} {t('dashboard')}</p>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="px-8 py-6">
+          {/* Announcement Banner */}
+          <AnnouncementBanner />
 
         {/* Information Tab */}
         {activeTab === 'information' && <StaffInformation />}
@@ -162,9 +78,12 @@ function StaffDashboard() {
         {/* Tutorials Tab */}
         {activeTab === 'tutorials' && <Tutorials />}
 
-        {/* Announcements Tab */}
-        {activeTab === 'announcements' && <Announcements />}
-      </main>
+          {/* Announcements Tab */}
+          {activeTab === 'announcements' && <Announcements />}
+        </main>
+      </div>
+
+      <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </div>
   )
 }

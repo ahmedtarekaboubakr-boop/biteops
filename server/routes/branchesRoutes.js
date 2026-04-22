@@ -1,10 +1,11 @@
 import express from 'express';
-import { authenticateToken, requireHR } from '../middleware.js';
+import { authenticateToken, requireHR, requireManager } from '../middleware.js';
 import * as branchesController from '../controllers/branchesController.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, requireHR, branchesController.getBranches);
+// Allow managers (including area managers) to view branches
+router.get('/', authenticateToken, requireManager, branchesController.getBranches);
 router.post('/', authenticateToken, requireHR, branchesController.createBranch);
 router.post('/initialize', authenticateToken, requireHR, branchesController.initializeBranches);
 router.get('/:id', authenticateToken, requireHR, branchesController.getBranchById);

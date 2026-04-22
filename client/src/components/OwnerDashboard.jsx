@@ -4,11 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import axios from 'axios'
 import Tutorials from './Tutorials'
-import LanguageToggle from './LanguageToggle'
 import AnnouncementBanner from './AnnouncementBanner'
 import Announcements from './Announcements'
 import Schedule from './Schedule'
-import Maintenance from './Maintenance'
+import Leaderboard from './Leaderboard'
+import ChangePasswordModal from './ChangePasswordModal'
+import Rating from './Rating'
+import Sidebar from './Sidebar'
 
 const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
 
@@ -23,6 +25,7 @@ function OwnerDashboard() {
   const [activities, setActivities] = useState([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
   const [activityFilter, setActivityFilter] = useState({ role: '', actionType: '' })
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
     fetchStaff()
@@ -152,29 +155,37 @@ function OwnerDashboard() {
     return `${age} years old`
   }
 
+  const tabs = [
+    { id: 'staff', label: 'Staff' },
+    { id: 'schedule', label: 'Schedule' },
+    { id: 'tutorials', label: 'Tutorials' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'activity', label: 'Activity' },
+    { id: 'leaderboard', label: 'Leaderboard' },
+    { id: 'announcements', label: 'Announcements' }
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">JJ's</h1>
-              <p className="text-sm text-gray-600">Owner Dashboard</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageToggle />
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {t('logout')}
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#f5f5f0]">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
+        user={user}
+        onChangePassword={() => setShowChangePassword(true)}
+        onLogout={logout}
+      />
+
+      {/* Main Content with left margin for sidebar */}
+      <div className="ml-56">
+        {/* Header */}
+        <header className="bg-[#f5f5f0] border-b border-gray-300 px-8 py-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">JJ's</h1>
+            <p className="text-base text-gray-600 mt-1">Owner Dashboard</p>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Staff Detail Modal */}
       {selectedStaff && (
@@ -268,93 +279,16 @@ function OwnerDashboard() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Announcement Banner */}
-        <AnnouncementBanner />
-        
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('staff')}
-              className={`${
-                activeTab === 'staff'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Staff
-            </button>
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`${
-                activeTab === 'schedule'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Schedule
-            </button>
-            <button
-              onClick={() => setActiveTab('tutorials')}
-              className={`${
-                activeTab === 'tutorials'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Tutorials
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`${
-                activeTab === 'analytics'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Analytics
-            </button>
-            <button
-              onClick={() => setActiveTab('activity')}
-              className={`${
-                activeTab === 'activity'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Activity
-            </button>
-            <button
-              onClick={() => setActiveTab('maintenance')}
-              className={`${
-                activeTab === 'maintenance'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Maintenance
-            </button>
-            <button
-              onClick={() => setActiveTab('announcements')}
-              className={`${
-                activeTab === 'announcements'
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Announcements
-            </button>
-          </nav>
-        </div>
+        {/* Main Content */}
+        <main className="px-8 py-6">
+          {/* Announcement Banner */}
+          <AnnouncementBanner />
 
         {/* Staff Tab */}
         {activeTab === 'staff' && (
           <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Staff by Branch</h2>
-              <p className="text-gray-500 mt-1">Total: {staff.length} staff members across all branches</p>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold text-gray-900 mb-2">Staff</h2>
             </div>
 
             {loading ? (
@@ -429,14 +363,8 @@ function OwnerDashboard() {
         {/* Tutorials Tab */}
         {activeTab === 'tutorials' && <Tutorials />}
 
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Analytics</h3>
-            <p className="text-gray-500">Analytics dashboard coming soon...</p>
-          </div>
-        )}
+        {/* Performance Tab */}
+        {activeTab === 'performance' && <Rating readOnly={true} />}
 
         {/* Activity Tab */}
         {activeTab === 'activity' && (
@@ -526,12 +454,15 @@ function OwnerDashboard() {
           </div>
         )}
 
-        {/* Maintenance Tab */}
-        {activeTab === 'maintenance' && <Maintenance />}
+        {/* Leaderboard Tab */}
+        {activeTab === 'leaderboard' && <Leaderboard />}
 
-        {/* Announcements Tab */}
-        {activeTab === 'announcements' && <Announcements />}
-      </main>
+          {/* Announcements Tab */}
+          {activeTab === 'announcements' && <Announcements />}
+        </main>
+      </div>
+
+      <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </div>
   )
 }

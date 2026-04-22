@@ -47,110 +47,101 @@ mongoose.connection.on("disconnected", () => {
 
 console.log(`[MongoDB] connecting to ${mongoLogTarget(MONGODB_URI)} ...`);
 
-mongoose
-  .connect(MONGODB_URI)
-  .then(async () => {
-    const { host, name, port } = mongoose.connection;
-    console.log(
-      `[MongoDB] connected db="${name}" host=${host}${port ? ` port=${port}` : ""} (cluster ${mongoLogTarget(MONGODB_URI)})`
-    );
+try {
+  await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
+  const { host, name, port } = mongoose.connection;
+  console.log(
+    `[MongoDB] connected db="${name}" host=${host}${port ? ` port=${port}` : ""} (cluster ${mongoLogTarget(MONGODB_URI)})`
+  );
 
-    // Create or update default owner account
-    try {
-      const owner = await User.findOne({ role: "owner" });
-      if (!owner) {
-        const defaultPassword = bcrypt.hashSync("owner", 10);
-        await User.create({
-          name: "Owner",
-          email: "owner@jjs.com",
-          username: "owner",
-          password: defaultPassword,
-          role: "owner",
-        });
-        console.log("✓ Default owner account created: username=owner, password=owner");
-      } else {
-        const defaultPassword = bcrypt.hashSync("owner", 10);
-        owner.password = defaultPassword;
-        owner.username = "owner";
-        owner.email = "owner@jjs.com";
-        await owner.save();
-        console.log("✓ Owner account updated: username=owner, password=owner");
-      }
-    } catch (error) {
-      console.error("⚠️  Error creating/updating default owner:", error.message);
+  // Create or update default owner account
+  try {
+    const owner = await User.findOne({ role: "owner" });
+    if (!owner) {
+      const defaultPassword = bcrypt.hashSync("owner", 10);
+      await User.create({
+        name: "Owner",
+        email: "owner@jjs.com",
+        username: "owner",
+        password: defaultPassword,
+        role: "owner",
+      });
+      console.log("✓ Default owner account created: username=owner, password=owner");
+    } else {
+      const defaultPassword = bcrypt.hashSync("owner", 10);
+      owner.password = defaultPassword;
+      owner.username = "owner";
+      owner.email = "owner@jjs.com";
+      await owner.save();
+      console.log("✓ Owner account updated: username=owner, password=owner");
     }
+  } catch (error) {
+    console.error("⚠️  Error creating/updating default owner:", error.message);
+  }
 
-    // Create or update default HR manager account
-    try {
-      const hrManager = await User.findOne({ username: "hr" });
-      if (!hrManager) {
-        const defaultPassword = bcrypt.hashSync("hr", 10);
-        await User.create({
-          name: "HR Manager",
-          email: "hr@jjs.com",
-          username: "hr",
-          password: defaultPassword,
-          role: "hr_manager",
-        });
-        console.log("✓ Default HR manager account created: username=hr, password=hr");
-      } else {
-        const defaultPassword = bcrypt.hashSync("hr", 10);
-        hrManager.password = defaultPassword;
-        hrManager.role = "hr_manager";
-        hrManager.email = "hr@jjs.com";
-        await hrManager.save();
-        console.log("✓ HR manager account updated: username=hr, password=hr");
-      }
-    } catch (error) {
-      console.error("⚠️  Error creating/updating HR manager:", error.message);
+  // Create or update default HR manager account
+  try {
+    const hrManager = await User.findOne({ username: "hr" });
+    if (!hrManager) {
+      const defaultPassword = bcrypt.hashSync("hr", 10);
+      await User.create({
+        name: "HR Manager",
+        email: "hr@jjs.com",
+        username: "hr",
+        password: defaultPassword,
+        role: "hr_manager",
+      });
+      console.log("✓ Default HR manager account created: username=hr, password=hr");
+    } else {
+      const defaultPassword = bcrypt.hashSync("hr", 10);
+      hrManager.password = defaultPassword;
+      hrManager.role = "hr_manager";
+      hrManager.email = "hr@jjs.com";
+      await hrManager.save();
+      console.log("✓ HR manager account updated: username=hr, password=hr");
     }
+  } catch (error) {
+    console.error("⚠️  Error creating/updating HR manager:", error.message);
+  }
 
-    // Create or update default branch manager account
-    try {
-      const branchManager = await User.findOne({ username: "manager" });
-      if (!branchManager) {
-        const defaultPassword = bcrypt.hashSync("manager", 10);
-        await User.create({
-          name: "Branch Manager",
-          email: "manager@jjs.com",
-          username: "manager",
-          password: defaultPassword,
-          role: "manager",
-          branch: "Arkan",
-        });
-        console.log("✓ Default branch manager account created: username=manager, password=manager");
-      } else {
-        const defaultPassword = bcrypt.hashSync("manager", 10);
-        branchManager.password = defaultPassword;
-        branchManager.role = "manager";
-        branchManager.email = "manager@jjs.com";
-        branchManager.branch = "Arkan";
-        await branchManager.save();
-        console.log("✓ Branch manager account updated: username=manager, password=manager");
-      }
-    } catch (error) {
-      console.error("⚠️  Error creating/updating branch manager:", error.message);
+  // Create or update default branch manager account
+  try {
+    const branchManager = await User.findOne({ username: "manager" });
+    if (!branchManager) {
+      const defaultPassword = bcrypt.hashSync("manager", 10);
+      await User.create({
+        name: "Branch Manager",
+        email: "manager@jjs.com",
+        username: "manager",
+        password: defaultPassword,
+        role: "manager",
+        branch: "Arkan",
+      });
+      console.log("✓ Default branch manager account created: username=manager, password=manager");
+    } else {
+      const defaultPassword = bcrypt.hashSync("manager", 10);
+      branchManager.password = defaultPassword;
+      branchManager.role = "manager";
+      branchManager.email = "manager@jjs.com";
+      branchManager.branch = "Arkan";
+      await branchManager.save();
+      console.log("✓ Branch manager account updated: username=manager, password=manager");
     }
-  })
-  .catch((err) => {
-    console.error("==========================================");
-    console.error("❌ MongoDB connection FAILED");
-    console.error("==========================================");
-    console.error(`Target: ${mongoLogTarget(MONGODB_URI)}`);
-    console.error("Error:", err.message);
-    console.error("");
-    console.error("Common causes:");
-    console.error("1. MONGODB_URI environment variable not set correctly");
-    console.error("2. MongoDB Atlas IP whitelist doesn't include Render's IPs");
-    console.error("3. Invalid username/password in connection string");
-    console.error("4. Network connectivity issues");
-    console.error("==========================================");
-    console.error("");
-    console.error("⚠️  Server will continue running but database operations will fail.");
-    console.error("Please fix MONGODB_URI and restart the service.");
-    console.error("==========================================");
-    // DO NOT EXIT - let server continue for debugging
-  });
+  } catch (error) {
+    console.error("⚠️  Error creating/updating branch manager:", error.message);
+  }
+} catch (err) {
+  console.error("==========================================");
+  console.error("❌ MongoDB connection FAILED");
+  console.error("==========================================");
+  console.error(`Target: ${mongoLogTarget(MONGODB_URI)}`);
+  console.error("Error:", err.message);
+  console.error("");
+  console.error("Local dev: start MongoDB (e.g. brew services start mongodb-community, or: docker run -d -p 27017:27017 --name biteops-mongo mongo:7)");
+  console.error("Common causes: wrong MONGODB_URI, firewall / Atlas IP allowlist, bad credentials");
+  console.error("==========================================");
+  throw err;
+}
 
 export {
   mongoose,
