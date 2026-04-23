@@ -309,7 +309,7 @@ function BranchManagement() {
                 </button>
               </div>
 
-              {selectedBranch.staff && selectedBranch.staff.length > 0 ? (
+              {Array.isArray(selectedBranch.staff) && selectedBranch.staff.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">

@@ -225,7 +225,7 @@ function TabletClock() {
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <p className="mt-4 text-gray-600">Loading staff...</p>
           </div>
-        ) : staff.length === 0 ? (
+        ) : !Array.isArray(staff) || staff.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <p className="text-gray-600">No staff members found for this branch</p>
           </div>

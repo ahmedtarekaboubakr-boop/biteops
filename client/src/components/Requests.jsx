@@ -425,7 +425,7 @@ function RequestForm({ staff, onClose, onSubmit }) {
   }
 
   // Filter staff to only show staff members (not managers)
-  const staffMembers = staff.filter(s => s.role === 'staff' || !s.role)
+  const staffMembers = Array.isArray(staff) ? staff.filter(s => s.role === 'staff' || !s.role) : []
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

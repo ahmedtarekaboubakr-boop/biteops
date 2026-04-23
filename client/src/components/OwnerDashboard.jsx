@@ -40,6 +40,14 @@ function OwnerDashboard() {
   const fetchStaff = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/staff`)
+      
+      // Ensure response.data is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setStaff([])
+        return
+      }
+      
       // Filter out Area Managers and Operations Managers
       const filteredStaff = response.data.filter(s => 
         s.title !== 'Area Manager' && s.title !== 'Operations Manager'
@@ -53,6 +61,7 @@ function OwnerDashboard() {
       setExpandedBranches(expanded)
     } catch (error) {
       console.error('Failed to fetch staff:', error)
+      setStaff([])
     } finally {
       setLoading(false)
     }

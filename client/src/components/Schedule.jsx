@@ -909,7 +909,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
               {hasStations && (
                 <p className="text-sm font-medium text-gray-700 mb-3">2. Select Staff:</p>
               )}
-              {staff.length === 0 ? (
+              {!Array.isArray(staff) || staff.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">No staff available</p>
               ) : (
                 <div className="space-y-2">

@@ -16,6 +16,12 @@ function StaffList({ staff, onEdit, onDelete, onReactivate, isHR }) {
 
   // Filter staff based on selected filters
   const filteredStaff = useMemo(() => {
+    // Defensive check: ensure staff is an array
+    if (!Array.isArray(staff)) {
+      console.error('Staff is not an array:', staff)
+      return []
+    }
+    
     return staff.filter(s => {
       const matchesTitle = !titleFilter || s.title === titleFilter
       const matchesBranch = !branchFilter || s.branch === branchFilter

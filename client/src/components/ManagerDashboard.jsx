@@ -48,9 +48,18 @@ function ManagerDashboard() {
       // HR can see all staff (active and inactive), others only see active
       const url = isHR ? '/api/staff?status=all' : '/api/staff'
       const response = await axios.get(url)
+      
+      // Ensure response.data is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setStaff([])
+        return
+      }
+      
       setStaff(response.data)
     } catch (error) {
       console.error('Failed to fetch staff:', error)
+      setStaff([])
     } finally {
       setLoading(false)
     }
