@@ -120,8 +120,18 @@ function Rating({ readOnly: propReadOnly = false }) {
       // Pass branch filter for HR/Area Manager/Ops Manager views
       const params = showBranchTabs && selectedBranch ? { branch: selectedBranch } : {}
       const response = await axios.get(`/api/schedules/date/${selectedDate}`, { params })
+      
+      // Validate response is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setScheduledStaff([])
+        setRatings({})
+        setAttendanceRecords({})
+        return
+      }
+      
       // Filter out Branch Managers and Area Managers from performance ratings
-      const filteredStaff = (response.data || []).filter(staff => 
+      const filteredStaff = response.data.filter(staff => 
         staff.title !== 'Branch Manager' && staff.title !== 'Area Manager' && staff.title !== 'Operations Manager'
       )
       setScheduledStaff(filteredStaff)
@@ -132,11 +142,15 @@ function Rating({ readOnly: propReadOnly = false }) {
         const attendanceResponse = await axios.get(`${API_URL}/api/attendance`, {
           params: { startDate: selectedDate, endDate: selectedDate }
         })
-        if (attendanceResponse.data) {
+        
+        if (Array.isArray(attendanceResponse.data)) {
           attendanceResponse.data.forEach(record => {
             attendanceMap[record.staff_id] = record
           })
+        } else {
+          console.error('Attendance API returned non-array data:', attendanceResponse.data)
         }
+        
         setAttendanceRecords(attendanceMap)
       } catch (error) {
         console.error('Failed to fetch attendance records:', error)
@@ -214,6 +228,14 @@ function Rating({ readOnly: propReadOnly = false }) {
           endDate: formatDate(endDate)
         }
       })
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setHistoricalRatings([])
+        setHistoryByDate({})
+        return
+      }
+      
       setHistoricalRatings(response.data)
       
       // Group by date
@@ -227,6 +249,8 @@ function Rating({ readOnly: propReadOnly = false }) {
       setHistoryByDate(byDate)
     } catch (error) {
       console.error('Failed to fetch historical ratings:', error)
+      setHistoricalRatings([])
+      setHistoryByDate({})
     } finally {
       setHistoryLoading(false)
     }

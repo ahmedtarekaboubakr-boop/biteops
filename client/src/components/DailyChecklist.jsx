@@ -139,6 +139,13 @@ function DailyChecklist() {
         params: { date: selectedDate }
       })
       
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setMorningChecklist({})
+        setNightChecklist({})
+        return
+      }
+      
       const morningData = {}
       const nightData = {}
       
@@ -154,6 +161,8 @@ function DailyChecklist() {
       setNightChecklist(nightData)
     } catch (error) {
       console.error('Failed to fetch checklist:', error)
+      setMorningChecklist({})
+      setNightChecklist({})
     } finally {
       setLoading(false)
     }
