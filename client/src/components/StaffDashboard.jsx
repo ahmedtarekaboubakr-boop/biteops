@@ -111,9 +111,17 @@ function StaffSchedule() {
       const endDate = weekEnd.toISOString().split('T')[0]
 
       const response = await axios.get(`/api/staff/my-schedule?startDate=${startDate}&endDate=${endDate}`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setSchedules([])
+        return
+      }
+      
       setSchedules(response.data)
     } catch (error) {
       console.error('Failed to fetch schedule:', error)
+      setSchedules([])
     } finally {
       setLoading(false)
     }
@@ -228,9 +236,17 @@ function StaffPerformance() {
     setLoading(true)
     try {
       const response = await axios.get(`/api/staff/my-ratings?startDate=${selectedDate}&endDate=${selectedDate}`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setRatings([])
+        return
+      }
+      
       setRatings(response.data)
     } catch (error) {
       console.error('Failed to fetch ratings:', error)
+      setRatings([])
     } finally {
       setLoading(false)
     }
@@ -351,9 +367,17 @@ function StaffAttendance() {
     setLoading(true)
     try {
       const response = await axios.get(`/api/staff/my-attendance?startDate=${startDate}&endDate=${endDate}`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setAttendance([])
+        return
+      }
+      
       setAttendance(response.data)
     } catch (error) {
       console.error('Failed to fetch attendance:', error)
+      setAttendance([])
     } finally {
       setLoading(false)
     }
@@ -454,8 +478,16 @@ function StaffRequests() {
     try {
       // Use the main leave-requests endpoint which now allows staff to see their own requests
       const response = await axios.get(`${API_URL}/api/leave-requests`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setRequests([])
+        return
+      }
+      
       setRequests(response.data)
     } catch (error) {
+      setRequests([])
       console.error('Failed to fetch requests:', error)
     } finally {
       setLoading(false)
@@ -595,9 +627,17 @@ function StaffPenalties() {
     setLoading(true)
     try {
       const response = await axios.get(`${API_URL}/api/staff/my-penalties`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setPenalties([])
+        return
+      }
+      
       setPenalties(response.data)
     } catch (error) {
       console.error('Failed to fetch penalties:', error)
+      setPenalties([])
     } finally {
       setLoading(false)
     }
@@ -845,9 +885,17 @@ function StaffLeaderboard() {
     setLoading(true)
     try {
       const response = await axios.get(`/api/leaderboard/staff?days=${timeRange}`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setLeaderboard([])
+        return
+      }
+      
       setLeaderboard(response.data)
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error)
+      setLeaderboard([])
     } finally {
       setLoading(false)
     }
