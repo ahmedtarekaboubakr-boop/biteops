@@ -237,7 +237,15 @@ function Rating({ readOnly: propReadOnly = false }) {
     const fetchBranches = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/branches`)
-        setBranches(response.data || [])
+        
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setBranches([])
+          setAreaManagerBranches([])
+          return
+        }
+        
+        setBranches(response.data)
         
         // Filter branches for area managers based on their area
         if (isAreaManager && user?.area) {

@@ -24,7 +24,15 @@ function Leaderboard() {
     const fetchBranches = async () => {
       try {
         const response = await axios.get('/api/branches')
-        setBranches(response.data || [])
+        
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setBranches([])
+          setAreaManagerBranches([])
+          return
+        }
+        
+        setBranches(response.data)
         
         // Filter branches for area managers based on their area
         if (isAreaManager && user?.area) {

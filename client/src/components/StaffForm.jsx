@@ -49,10 +49,18 @@ function StaffForm({ staff, onClose, onSuccess }) {
       // Try to fetch from branches API (for HR)
       try {
         const response = await axios.get(`${API_URL}/api/branches`)
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          throw new Error('Invalid branches data')
+        }
         setBranches(response.data.map(b => b.name))
       } catch (err) {
         // If not HR or API fails, fall back to getting unique branches from users
         const staffResponse = await axios.get(`${API_URL}/api/staff`)
+        if (!Array.isArray(staffResponse.data)) {
+          console.error('API returned non-array data:', staffResponse.data)
+          throw new Error('Invalid staff data')
+        }
         const uniqueBranches = [...new Set(staffResponse.data.map(s => s.branch).filter(Boolean))]
         setBranches(uniqueBranches.length > 0 ? uniqueBranches : ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch'])
       }

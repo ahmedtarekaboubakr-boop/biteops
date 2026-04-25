@@ -37,9 +37,18 @@ function Announcements() {
       const canCreate = user?.role && ['owner', 'hr_manager', 'area_manager', 'operations_manager', 'manager'].includes(user.role)
       const endpoint = canCreate ? '/api/announcements/all' : '/api/announcements'
       const response = await axios.get(endpoint)
+      
+      // Ensure response.data is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setAnnouncements([])
+        return
+      }
+      
       setAnnouncements(response.data)
     } catch (error) {
       console.error('Failed to fetch announcements:', error)
+      setAnnouncements([])
     } finally {
       setLoading(false)
     }
@@ -131,6 +140,11 @@ function Announcements() {
       if (user?.role === 'hr_manager') {
         // HR sees all staff with specific titles from all branches
         const response = await axios.get(`${API_URL}/api/staff`)
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setStaffMembers([])
+          return
+        }
         const allowedTitles = ['Crew', 'Cashier', 'Supervisor', 'Line Leader', 'Assistant Manager']
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && allowedTitles.includes(staff.title)
@@ -140,11 +154,21 @@ function Announcements() {
         const response = await axios.get(`${API_URL}/api/staff`, {
           params: { branch: user.branch }
         })
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setStaffMembers([])
+          return
+        }
         setStaffMembers(response.data.filter(staff => staff.role === 'staff'))
       } else if (user?.role === 'area_manager' && user?.area) {
         // Area Manager sees all staff from branches in their assigned area
         const assignedBranches = getAreaManagerBranches(user.area)
         const response = await axios.get(`${API_URL}/api/staff`)
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setStaffMembers([])
+          return
+        }
         setStaffMembers(response.data.filter(staff => 
           staff.role === 'staff' && assignedBranches.includes(staff.branch)
         ))
