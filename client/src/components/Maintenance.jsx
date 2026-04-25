@@ -53,9 +53,18 @@ function Maintenance() {
         ? `/api/maintenance?branch=${selectedBranch}`
         : '/api/maintenance'
       const response = await axios.get(url)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setItems([])
+        setError('Failed to load maintenance items')
+        return
+      }
+      
       setItems(response.data)
     } catch (err) {
       console.error('Failed to fetch maintenance items:', err)
+      setItems([])
       setError('Failed to load maintenance items')
     } finally {
       setLoading(false)

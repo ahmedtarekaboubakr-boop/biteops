@@ -46,9 +46,18 @@ function Penalties({ staff }) {
       if (filters.status) params.status = filters.status
 
       const response = await axios.get(`${API_URL}/api/penalties`, { params })
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setPenalties([])
+        alert('Failed to load penalties data')
+        return
+      }
+      
       setPenalties(response.data)
     } catch (error) {
       console.error('Failed to fetch penalties:', error)
+      setPenalties([])
       alert('Failed to fetch penalties: ' + (error.response?.data?.error || error.message))
     } finally {
       setLoading(false)

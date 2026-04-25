@@ -23,9 +23,18 @@ function BranchManagement() {
   const fetchBranches = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/branches`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setBranches([])
+        setError('Failed to load branches')
+        return
+      }
+      
       setBranches(response.data)
     } catch (error) {
       console.error('Failed to fetch branches:', error)
+      setBranches([])
       setError('Failed to load branches')
     } finally {
       setLoading(false)
@@ -35,9 +44,17 @@ function BranchManagement() {
   const fetchAllStaff = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/staff`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setStaff([])
+        return
+      }
+      
       setStaff(response.data)
     } catch (error) {
       console.error('Failed to fetch staff:', error)
+      setStaff([])
     }
   }
 
@@ -79,11 +96,19 @@ function BranchManagement() {
   const handleAssignStaff = async (branchId) => {
     try {
       const response = await axios.get(`/api/branches/${branchId}/available-staff`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setAvailableStaff([])
+        return
+      }
+      
       setAvailableStaff(response.data)
       setSelectedStaffIds([])
       setShowAssignStaff(true)
     } catch (error) {
       console.error('Failed to fetch available staff:', error)
+      setAvailableStaff([])
       alert('Failed to load staff list')
     }
   }
@@ -474,6 +499,13 @@ function BranchForm({ branch, onClose, onSuccess }) {
     try {
       // Fetch branch managers specifically (users with role 'manager' and title 'Branch Manager')
       const response = await axios.get(`${API_URL}/api/branch-managers`)
+      
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        setManagers([])
+        return
+      }
+      
       setManagers(response.data)
     } catch (error) {
       console.error('Failed to fetch branch managers:', error)

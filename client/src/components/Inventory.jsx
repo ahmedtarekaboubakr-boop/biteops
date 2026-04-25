@@ -40,17 +40,45 @@ function Inventory() {
           axios.get(`${API_URL}/api/inventory/transfers`),
           axios.get(`${API_URL}/api/inventory/transfers/incoming`)
         ])
-        setTransfers(outgoing.data)
-        setIncomingTransfers(incoming.data)
+        
+        if (!Array.isArray(outgoing.data)) {
+          console.error('API returned non-array data:', outgoing.data)
+          setTransfers([])
+        } else {
+          setTransfers(outgoing.data)
+        }
+        
+        if (!Array.isArray(incoming.data)) {
+          console.error('API returned non-array data:', incoming.data)
+          setIncomingTransfers([])
+        } else {
+          setIncomingTransfers(incoming.data)
+        }
       } else if (activeSection === 'waste') {
         const response = await axios.get(`${API_URL}/api/inventory/waste`)
-        setWaste(response.data)
+        
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setWaste([])
+        } else {
+          setWaste(response.data)
+        }
       } else if (activeSection === 'spot-check') {
         const response = await axios.get(`/api/inventory/spot-check?date=${selectedDate}`)
-        setSpotChecks(response.data)
+        
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setSpotChecks([])
+        } else {
+          setSpotChecks(response.data)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch inventory data:', error)
+      setTransfers([])
+      setIncomingTransfers([])
+      setWaste([])
+      setSpotChecks([])
     } finally {
       setLoading(false)
     }
@@ -67,9 +95,16 @@ function Inventory() {
     if (type === 'transfer' || type === 'waste' || type === 'dispose' || type === 'receive') {
       try {
         const response = await axios.get(`${API_URL}/api/inventory`)
-        setInventory(response.data)
+        
+        if (!Array.isArray(response.data)) {
+          console.error('API returned non-array data:', response.data)
+          setInventory([])
+        } else {
+          setInventory(response.data)
+        }
       } catch (error) {
         console.error('Failed to fetch inventory:', error)
+        setInventory([])
       }
     }
     setFormType(type)
