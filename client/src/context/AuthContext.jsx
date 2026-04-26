@@ -48,17 +48,31 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (emailOrUsername, password) => {
+    const startTime = performance.now()
+    console.log('[Login] Starting login process...')
+    
     // Determine if it's an email or username
     const isEmail = emailOrUsername.includes('@')
     const payload = isEmail 
       ? { email: emailOrUsername, password }
       : { username: emailOrUsername, password }
     
+    console.log(`[Login] Payload prepared (${(performance.now() - startTime).toFixed(2)}ms)`)
+    
+    const requestStart = performance.now()
     const response = await axios.post(`${API_URL}/api/auth/login`, payload)
+    const requestTime = performance.now() - requestStart
+    console.log(`[Login] Server response received in ${requestTime.toFixed(2)}ms`)
+    
     const { token, user } = response.data
     localStorage.setItem('token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     setUser(user)
+    
+    const totalTime = performance.now() - startTime
+    console.log(`[Login] Login completed successfully in ${totalTime.toFixed(2)}ms`)
+    console.log(`[Login] Breakdown: Request=${requestTime.toFixed(2)}ms, Total=${totalTime.toFixed(2)}ms`)
+    
     return user
   }
 

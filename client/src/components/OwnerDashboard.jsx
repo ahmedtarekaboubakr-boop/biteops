@@ -24,6 +24,7 @@ function OwnerDashboard() {
   const [selectedStaff, setSelectedStaff] = useState(null)
   const [activities, setActivities] = useState([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
+  const [activitiesError, setActivitiesError] = useState(null)
   const [activityFilter, setActivityFilter] = useState({ role: '', actionType: '' })
   const [showChangePassword, setShowChangePassword] = useState(false)
 
@@ -69,6 +70,7 @@ function OwnerDashboard() {
 
   const fetchActivities = async () => {
     setActivitiesLoading(true)
+    setActivitiesError(null)
     try {
       const params = new URLSearchParams()
       if (activityFilter.role) params.append('userRole', activityFilter.role)
@@ -76,9 +78,22 @@ function OwnerDashboard() {
       params.append('limit', '200')
       
       const response = await axios.get(`/api/activity-log?${params.toString()}`)
+      
+      // Ensure response.data is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        const errorMsg = response.data?.error || 'Invalid response format from server'
+        setActivitiesError(errorMsg)
+        setActivities([])
+        return
+      }
+      
       setActivities(response.data)
     } catch (error) {
       console.error('Failed to fetch activities:', error)
+      const errorMsg = error.response?.data?.error || error.message
+      setActivitiesError(errorMsg)
+      setActivities([])
     } finally {
       setActivitiesLoading(false)
     }
@@ -446,6 +461,18 @@ function OwnerDashboard() {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               {activitiesLoading ? (
                 <div className="p-12 text-center text-gray-500">Loading activities...</div>
+              ) : activitiesError ? (
+                <div className="p-12 text-center">
+                  <div className="text-5xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-semibold text-red-700 mb-2">Error Loading Activities</h3>
+                  <p className="text-gray-600">{activitiesError}</p>
+                  <button 
+                    onClick={fetchActivities}
+                    className="mt-4 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-600"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : activities.length === 0 ? (
                 <div className="p-12 text-center">
                   <div className="text-5xl mb-4">📋</div>

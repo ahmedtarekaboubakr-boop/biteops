@@ -16,6 +16,9 @@ const PUBLIC_CLIENT_URL = process.env.PUBLIC_CLIENT_URL || '';
 const GENERIC_RESET_ERROR = 'Invalid or expired reset link';
 
 export async function login(req, res) {
+  const requestStart = Date.now();
+  console.log('[Login Server] Request received');
+  
   try {
     const { username, email, password } = req.body;
 
@@ -33,29 +36,48 @@ export async function login(req, res) {
 
     try {
       const isEmail = loginId.includes('@');
+      console.log(`[Login Server] Looking up user by ${isEmail ? 'email' : 'username'}...`);
+      
+      const dbQueryStart = Date.now();
       const user = isEmail
         ? await User.findOne({ email: loginId.toLowerCase() })
         : await User.findOne({ username: loginId });
+      const dbQueryTime = Date.now() - dbQueryStart;
+      console.log(`[Login Server] Database query completed in ${dbQueryTime}ms`);
 
       if (!user) {
+        console.log(`[Login Server] User not found (${Date.now() - requestStart}ms)`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       if (!user.password) {
+        console.log(`[Login Server] User has no password (${Date.now() - requestStart}ms)`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
+      console.log('[Login Server] Comparing password...');
+      const bcryptStart = Date.now();
       const validPassword = await bcrypt.compare(password, user.password);
+      const bcryptTime = Date.now() - bcryptStart;
+      console.log(`[Login Server] Password comparison completed in ${bcryptTime}ms`);
+      
       if (!validPassword) {
+        console.log(`[Login Server] Invalid password (${Date.now() - requestStart}ms)`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
+      console.log('[Login Server] Generating JWT token...');
+      const jwtStart = Date.now();
       const token = jwt.sign(
         { id: user._id.toString(), username: user.username, role: user.role },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
+      const jwtTime = Date.now() - jwtStart;
+      console.log(`[Login Server] JWT generated in ${jwtTime}ms`);
 
+      console.log('[Login Server] Logging activity...');
+      const logStart = Date.now();
       try {
         await logActivity(
           user._id,
@@ -66,9 +88,16 @@ export async function login(req, res) {
           user.branch,
           { username: user.username }
         );
+        const logTime = Date.now() - logStart;
+        console.log(`[Login Server] Activity logged in ${logTime}ms`);
       } catch (logError) {
-        console.error('Failed to log login activity:', logError);
+        const logTime = Date.now() - logStart;
+        console.error(`[Login Server] Failed to log activity (${logTime}ms):`, logError);
       }
+
+      const totalTime = Date.now() - requestStart;
+      console.log(`[Login Server] Login successful - Total time: ${totalTime}ms`);
+      console.log(`[Login Server] Breakdown: DB=${dbQueryTime}ms, bcrypt=${bcryptTime}ms, JWT=${jwtTime}ms`);
 
       res.json({
         token,
@@ -84,11 +113,11 @@ export async function login(req, res) {
         },
       });
     } catch (dbError) {
-      console.error('Database error in login:', dbError);
+      console.error(`[Login Server] Database error (${Date.now() - requestStart}ms):`, dbError);
       return res.status(500).json({ error: 'Database error: ' + dbError.message });
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error(`[Login Server] Login error (${Date.now() - requestStart}ms):`, error);
     return res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 }

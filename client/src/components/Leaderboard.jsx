@@ -14,6 +14,7 @@ function Leaderboard() {
   
   const [staffLeaderboard, setStaffLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30') // days: '7', '30', '90', 'all'
   const [filter, setFilter] = useState('all') // 'all', 'branch:BranchName', 'area:AreaName'
   const [branches, setBranches] = useState([])
@@ -56,6 +57,7 @@ function Leaderboard() {
 
   const fetchLeaderboard = async () => {
     setLoading(true)
+    setError(null)
     try {
       let url = `/api/leaderboard/staff?days=${timeRange}`
       
@@ -71,10 +73,22 @@ function Leaderboard() {
       }
       
       const response = await axios.get(url)
+      
+      // Ensure response.data is an array
+      if (!Array.isArray(response.data)) {
+        console.error('API returned non-array data:', response.data)
+        const errorMsg = response.data?.error || 'Invalid response format from server'
+        setError(errorMsg)
+        setStaffLeaderboard([])
+        return
+      }
+      
       setStaffLeaderboard(response.data)
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error)
-      alert('Failed to fetch leaderboard: ' + (error.response?.data?.error || error.message))
+      const errorMsg = error.response?.data?.error || error.message
+      setError(errorMsg)
+      setStaffLeaderboard([])
     } finally {
       setLoading(false)
     }
@@ -170,6 +184,18 @@ function Leaderboard() {
           
           {loading ? (
             <div className="p-12 text-center text-gray-500">Loading leaderboard...</div>
+          ) : error ? (
+            <div className="p-12 text-center">
+              <div className="text-5xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold text-red-700 mb-2">Error Loading Data</h3>
+              <p className="text-gray-600">{error}</p>
+              <button 
+                onClick={fetchLeaderboard}
+                className="mt-4 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-600"
+              >
+                Try Again
+              </button>
+            </div>
           ) : staffLeaderboard.length === 0 ? (
             <div className="p-12 text-center">
               <div className="text-5xl mb-4">📊</div>
