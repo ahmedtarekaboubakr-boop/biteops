@@ -19,7 +19,6 @@ function StaffDashboard() {
     { id: 'information', label: 'Information' },
     { id: 'schedule', label: 'Schedule' },
     { id: 'performance', label: 'Performance' },
-    { id: 'attendance', label: 'Attendance' },
     { id: 'requests', label: 'Requests' },
     { id: 'penalties', label: 'Penalties' },
     { id: 'leaderboard', label: 'Leaderboard' },
@@ -62,9 +61,6 @@ function StaffDashboard() {
 
         {/* Performance Tab */}
         {activeTab === 'performance' && <StaffPerformance />}
-
-        {/* Attendance Tab */}
-        {activeTab === 'attendance' && <StaffAttendance />}
 
         {/* Requests Tab - Read-only for staff */}
         {activeTab === 'requests' && <StaffRequests />}
@@ -345,118 +341,6 @@ function StaffPerformance() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Staff Attendance Component
-function StaffAttendance() {
-  const { user } = useAuth()
-  const [attendance, setAttendance] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
-
-  useEffect(() => {
-    fetchAttendance()
-  }, [startDate, endDate])
-
-  const fetchAttendance = async () => {
-    setLoading(true)
-    try {
-      const response = await axios.get(`${API_URL}/api/staff/my-attendance?startDate=${startDate}&endDate=${endDate}`)
-      
-      if (!Array.isArray(response.data)) {
-        console.error('API returned non-array data:', response.data)
-        setAttendance([])
-        return
-      }
-      
-      setAttendance(response.data)
-    } catch (error) {
-      console.error('Failed to fetch attendance:', error)
-      setAttendance([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-  }
-
-  const getStatusColor = (status) => {
-    const colors = {
-      present: 'bg-green-100 text-green-700',
-      absent: 'bg-red-100 text-red-700',
-      late: 'bg-yellow-100 text-yellow-700',
-      on_leave: 'bg-blue-100 text-blue-700'
-    }
-    return colors[status] || 'bg-gray-100 text-gray-700'
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">From:</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
-          />
-          <label className="text-sm font-medium text-gray-700">To:</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">Loading attendance...</div>
-      ) : attendance.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-5xl mb-4">📊</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Attendance Records</h3>
-          <p className="text-gray-500">Your attendance records will appear here</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock In</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock Out</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours Worked</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {attendance.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{formatDate(record.date)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.shift}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                      {record.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.clock_in || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.clock_out || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.hours_worked || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
     </div>
