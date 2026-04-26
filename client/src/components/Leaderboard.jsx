@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -24,7 +25,7 @@ function Leaderboard() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get('/api/branches')
+        const response = await axios.get(`${API_URL}/api/branches`)
         
         if (!Array.isArray(response.data)) {
           console.error('API returned non-array data:', response.data)
@@ -59,7 +60,7 @@ function Leaderboard() {
     setLoading(true)
     setError(null)
     try {
-      let url = `/api/leaderboard/staff?days=${timeRange}`
+      let url = `${API_URL}/api/leaderboard/staff?days=${timeRange}`
       
       // Add filter parameter if owner/operations manager is filtering
       if (canFilter && filter !== 'all') {

@@ -109,7 +109,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
   const fetchEmploymentHistory = async () => {
     if (!staff?.id) return
     try {
-      const response = await axios.get(`/api/staff/${staff.id}/employment-history`)
+      const response = await axios.get(`${API_URL}/api/staff/${staff.id}/employment-history`)
       setEmploymentHistory(response.data.history || response.data || [])
       setManOfTheMonthCount(response.data.manOfTheMonthCount || 0)
     } catch (error) {
@@ -142,7 +142,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
       const formData = new FormData()
       formData.append('photo', photoFile)
       
-      const response = await axios.post(`/api/staff/${staff.id}/photo`, formData, {
+      const response = await axios.post(`${API_URL}/api/staff/${staff.id}/photo`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -188,7 +188,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
       const formData = new FormData()
       formData.append('certificate', certificateFile)
       
-      const response = await axios.post(`/api/staff/${staff.id}/health-certificate`, formData, {
+      const response = await axios.post(`${API_URL}/api/staff/${staff.id}/health-certificate`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -256,7 +256,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         if (updateData.totalLeaveDays) {
           updateData.totalLeaveDays = parseInt(updateData.totalLeaveDays) || 0
         }
-        await axios.put(`/api/staff/${staff.id}`, updateData)
+        await axios.put(`${API_URL}/api/staff/${staff.id}`, updateData)
         
         // Upload photo separately if a new one was selected
         if (photoFile) {
@@ -282,7 +282,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         if (photoFile && response.data.id) {
           const formDataPhoto = new FormData()
           formDataPhoto.append('photo', photoFile)
-          await axios.post(`/api/staff/${response.data.id}/photo`, formDataPhoto, {
+          await axios.post(`${API_URL}/api/staff/${response.data.id}/photo`, formDataPhoto, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -292,7 +292,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         if (certificateFile && response.data.id) {
           const formDataCert = new FormData()
           formDataCert.append('certificate', certificateFile)
-          await axios.post(`/api/staff/${response.data.id}/health-certificate`, formDataCert, {
+          await axios.post(`${API_URL}/api/staff/${response.data.id}/health-certificate`, formDataCert, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }

@@ -97,7 +97,7 @@ function Tutorials() {
     }
 
     try {
-      await axios.delete(`/api/tutorials/${id}`)
+      await axios.delete(`${API_URL}/api/tutorials/${id}`)
       fetchTutorials()
     } catch (error) {
       alert('Failed to delete tutorial: ' + (error.response?.data?.error || error.message))

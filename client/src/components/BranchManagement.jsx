@@ -60,7 +60,7 @@ function BranchManagement() {
 
   const fetchBranchDetails = async (branchId) => {
     try {
-      const response = await axios.get(`/api/branches/${branchId}`)
+      const response = await axios.get(`${API_URL}/api/branches/${branchId}`)
       setSelectedBranch(response.data)
     } catch (error) {
       console.error('Failed to fetch branch details:', error)
@@ -83,7 +83,7 @@ function BranchManagement() {
     }
 
     try {
-      await axios.delete(`/api/branches/${branchId}`)
+      await axios.delete(`${API_URL}/api/branches/${branchId}`)
       fetchBranches()
       if (selectedBranch && selectedBranch.id === branchId) {
         setSelectedBranch(null)
@@ -95,7 +95,7 @@ function BranchManagement() {
 
   const handleAssignStaff = async (branchId) => {
     try {
-      const response = await axios.get(`/api/branches/${branchId}/available-staff`)
+      const response = await axios.get(`${API_URL}/api/branches/${branchId}/available-staff`)
       
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)
@@ -117,7 +117,7 @@ function BranchManagement() {
     if (!selectedBranch) return
 
     try {
-      await axios.put(`/api/branches/${selectedBranch.id}/assign-staff`, {
+      await axios.put(`${API_URL}/api/branches/${selectedBranch.id}/assign-staff`, {
         staffIds: selectedStaffIds
       })
       fetchBranchDetails(selectedBranch.id)
@@ -533,7 +533,7 @@ function BranchForm({ branch, onClose, onSuccess }) {
 
     try {
       if (branch) {
-        await axios.put(`/api/branches/${branch.id}`, formData)
+        await axios.put(`${API_URL}/api/branches/${branch.id}`, formData)
       } else {
         await axios.post(`${API_URL}/api/branches`, formData)
       }

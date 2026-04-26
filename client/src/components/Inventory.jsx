@@ -64,7 +64,7 @@ function Inventory() {
           setWaste(response.data)
         }
       } else if (activeSection === 'spot-check') {
-        const response = await axios.get(`/api/inventory/spot-check?date=${selectedDate}`)
+        const response = await axios.get(`${API_URL}/api/inventory/spot-check?date=${selectedDate}`)
         
         if (!Array.isArray(response.data)) {
           console.error('API returned non-array data:', response.data)
@@ -131,7 +131,7 @@ function Inventory() {
 
   const handleTransferResponse = async (transferId, accepted) => {
     try {
-      await axios.put(`/api/inventory/transfers/${transferId}/respond`, { accepted })
+      await axios.put(`${API_URL}/api/inventory/transfers/${transferId}/respond`, { accepted })
       fetchData()
       alert(accepted ? 'Transfer received and added to inventory!' : 'Transfer marked as not received')
     } catch (error) {

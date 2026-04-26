@@ -77,7 +77,7 @@ function OwnerDashboard() {
       if (activityFilter.actionType) params.append('actionType', activityFilter.actionType)
       params.append('limit', '200')
       
-      const response = await axios.get(`/api/activity-log?${params.toString()}`)
+      const response = await axios.get(`${API_URL}/api/activity-log?${params.toString()}`)
       
       // Ensure response.data is an array
       if (!Array.isArray(response.data)) {

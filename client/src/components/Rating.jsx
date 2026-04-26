@@ -119,7 +119,7 @@ function Rating({ readOnly: propReadOnly = false }) {
     try {
       // Pass branch filter for HR/Area Manager/Ops Manager views
       const params = showBranchTabs && selectedBranch ? { branch: selectedBranch } : {}
-      const response = await axios.get(`/api/schedules/date/${selectedDate}`, { params })
+      const response = await axios.get(`${API_URL}/api/schedules/date/${selectedDate}`, { params })
       
       // Validate response is an array
       if (!Array.isArray(response.data)) {

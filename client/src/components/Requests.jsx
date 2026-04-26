@@ -81,7 +81,7 @@ function Requests({ staff, isHR = false }) {
       const balances = {}
       for (const staffMember of staff) {
         try {
-          const response = await axios.get(`/api/staff/${staffMember.id}/leave-balance`)
+          const response = await axios.get(`${API_URL}/api/staff/${staffMember.id}/leave-balance`)
           balances[staffMember.id] = response.data
         } catch (error) {
           console.error(`Failed to fetch balance for staff ${staffMember.id}:`, error)
@@ -100,7 +100,7 @@ function Requests({ staff, isHR = false }) {
     }
 
     try {
-      await axios.put(`/api/leave-requests/${requestId}`, { status })
+      await axios.put(`${API_URL}/api/leave-requests/${requestId}`, { status })
       fetchRequests()
       fetchLeaveBalances()
     } catch (error) {

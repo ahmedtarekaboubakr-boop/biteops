@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import axios from 'axios'
@@ -46,7 +47,7 @@ function ManagerDashboard() {
   const fetchStaff = async () => {
     try {
       // HR can see all staff (active and inactive), others only see active
-      const url = isHR ? '/api/staff?status=all' : '/api/staff'
+      const url = isHR ? `${API_URL}/api/staff?status=all` : `${API_URL}/api/staff`
       const response = await axios.get(url)
       
       // Ensure response.data is an array
@@ -95,7 +96,7 @@ function ManagerDashboard() {
     }
 
     try {
-      await axios.delete(`/api/staff/${id}`)
+      await axios.delete(`${API_URL}/api/staff/${id}`)
       fetchStaff()
     } catch (error) {
       alert('Failed to deactivate staff: ' + (error.response?.data?.error || error.message))
@@ -108,7 +109,7 @@ function ManagerDashboard() {
     }
 
     try {
-      await axios.put(`/api/staff/${id}/reactivate`)
+      await axios.put(`${API_URL}/api/staff/${id}/reactivate`)
       fetchStaff()
     } catch (error) {
       alert('Failed to reactivate staff: ' + (error.response?.data?.error || error.message))

@@ -25,7 +25,7 @@ function AnnouncementBanner() {
 
   const handleDismiss = async (announcementId) => {
     try {
-      await axios.post(`/api/announcements/${announcementId}/dismiss`)
+      await axios.post(`${API_URL}/api/announcements/${announcementId}/dismiss`)
       setDismissedIds(prev => new Set([...prev, announcementId]))
     } catch (error) {
       console.error('Failed to dismiss announcement:', error)

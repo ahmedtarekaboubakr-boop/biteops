@@ -82,7 +82,7 @@ function Penalties({ staff }) {
   const handleFormSubmit = async (formData) => {
     try {
       if (editingPenalty) {
-        await axios.put(`/api/penalties/${editingPenalty.id}`, formData)
+        await axios.put(`${API_URL}/api/penalties/${editingPenalty.id}`, formData)
         alert('Penalty updated successfully')
       } else {
         await axios.post(`${API_URL}/api/penalties`, formData)
@@ -101,7 +101,7 @@ function Penalties({ staff }) {
     }
 
     try {
-      await axios.delete(`/api/penalties/${id}`)
+      await axios.delete(`${API_URL}/api/penalties/${id}`)
       alert('Penalty deleted successfully')
       fetchPenalties()
     } catch (error) {

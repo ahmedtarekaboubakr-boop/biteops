@@ -54,7 +54,7 @@ function ManagerForm({ manager, onClose, onSuccess }) {
         if (!updateData.password) {
           delete updateData.password
         }
-        await axios.put(`/api/managers/${manager.id}`, updateData)
+        await axios.put(`${API_URL}/api/managers/${manager.id}`, updateData)
       } else {
         await axios.post(`${API_URL}/api/managers`, formData)
       }

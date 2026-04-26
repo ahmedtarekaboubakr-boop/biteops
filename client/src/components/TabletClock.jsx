@@ -50,7 +50,7 @@ function TabletClock() {
     setLoading(true)
     setError('')
     try {
-      const response = await axios.get(`/api/tablet/staff/${encodeURIComponent(branchName)}`)
+      const response = await axios.get(`${API_URL}/api/tablet/staff/${encodeURIComponent(branchName)}`)
       setStaff(response.data)
     } catch (err) {
       setError('Failed to load staff: ' + (err.response?.data?.error || err.message))

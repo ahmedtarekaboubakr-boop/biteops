@@ -110,7 +110,7 @@ function StaffSchedule() {
       const startDate = weekStart.toISOString().split('T')[0]
       const endDate = weekEnd.toISOString().split('T')[0]
 
-      const response = await axios.get(`/api/staff/my-schedule?startDate=${startDate}&endDate=${endDate}`)
+      const response = await axios.get(`${API_URL}/api/staff/my-schedule?startDate=${startDate}&endDate=${endDate}`)
       
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)
@@ -235,7 +235,7 @@ function StaffPerformance() {
   const fetchRatings = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`/api/staff/my-ratings?startDate=${selectedDate}&endDate=${selectedDate}`)
+      const response = await axios.get(`${API_URL}/api/staff/my-ratings?startDate=${selectedDate}&endDate=${selectedDate}`)
       
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)
@@ -366,7 +366,7 @@ function StaffAttendance() {
   const fetchAttendance = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`/api/staff/my-attendance?startDate=${startDate}&endDate=${endDate}`)
+      const response = await axios.get(`${API_URL}/api/staff/my-attendance?startDate=${startDate}&endDate=${endDate}`)
       
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)
@@ -710,7 +710,7 @@ function StaffInformation() {
   const fetchStaffInfo = async () => {
     try {
       // Fetch staff information using the user's ID
-      const response = await axios.get(`/api/staff/${user?.id}`)
+      const response = await axios.get(`${API_URL}/api/staff/${user?.id}`)
       setStaffInfo(response.data)
     } catch (error) {
       console.error('Failed to fetch staff information:', error)
@@ -721,7 +721,7 @@ function StaffInformation() {
 
   const fetchLeaveBalance = async () => {
     try {
-      const response = await axios.get(`/api/staff/${user?.id}/leave-balance`)
+      const response = await axios.get(`${API_URL}/api/staff/${user?.id}/leave-balance`)
       setLeaveBalance(response.data)
     } catch (error) {
       console.error('Failed to fetch leave balance:', error)
@@ -884,7 +884,7 @@ function StaffLeaderboard() {
   const fetchLeaderboard = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`/api/leaderboard/staff?days=${timeRange}`)
+      const response = await axios.get(`${API_URL}/api/leaderboard/staff?days=${timeRange}`)
       
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)

@@ -50,8 +50,8 @@ function Maintenance() {
     try {
       setLoading(true)
       const url = canViewAllBranches && selectedBranch !== 'all' 
-        ? `/api/maintenance?branch=${selectedBranch}`
-        : '/api/maintenance'
+        ? `${API_URL}/api/maintenance?branch=${selectedBranch}`
+        : `${API_URL}/api/maintenance`
       const response = await axios.get(url)
       
       if (!Array.isArray(response.data)) {
@@ -83,7 +83,7 @@ function Maintenance() {
     try {
       const branch = isOwner ? formData.branch : user.branch
       if (editingItem) {
-        await axios.put(`/api/maintenance/${editingItem.id}`, {
+        await axios.put(`${API_URL}/api/maintenance/${editingItem.id}`, {
           ...formData,
           branch: branch
         })
@@ -123,7 +123,7 @@ function Maintenance() {
     }
 
     try {
-      await axios.delete(`/api/maintenance/${id}`)
+      await axios.delete(`${API_URL}/api/maintenance/${id}`)
       await fetchItems()
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete maintenance item')

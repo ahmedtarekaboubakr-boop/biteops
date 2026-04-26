@@ -35,7 +35,7 @@ function Announcements() {
       // Staff members use /api/announcements to see their own announcements
       // Managers and above use /api/announcements/all to see all announcements
       const canCreate = user?.role && ['owner', 'hr_manager', 'area_manager', 'operations_manager', 'manager'].includes(user.role)
-      const endpoint = canCreate ? '/api/announcements/all' : '/api/announcements'
+      const endpoint = canCreate ? `${API_URL}/api/announcements/all` : `${API_URL}/api/announcements`
       const response = await axios.get(endpoint)
       
       // Ensure response.data is an array

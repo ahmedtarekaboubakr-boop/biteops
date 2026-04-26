@@ -215,7 +215,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
 
   const markNotificationRead = async (id) => {
     try {
-      await axios.put(`/api/notifications/${id}/read`)
+      await axios.put(`${API_URL}/api/notifications/${id}/read`)
       fetchNotifications()
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
@@ -305,7 +305,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
     if (!window.confirm('Remove this staff member from this shift?')) return
 
     try {
-      await axios.delete(`/api/schedules/${scheduleId}`)
+      await axios.delete(`${API_URL}/api/schedules/${scheduleId}`)
       fetchSchedules()
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to remove staff from schedule')
