@@ -6,7 +6,6 @@ import { User, EmploymentHistory, StaffLeaveBalance, Schedule, Rating, Attendanc
 import { logActivity } from '../utils/activityLogger.js';
 import { getAreaManagerBranches } from '../utils/getAreaManagerBranches.js';
 import { hasHRPrivileges } from '../utils/roleHelpers.js';
-import { cloudinary } from '../uploads.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,26 +40,13 @@ export async function uploadPhoto(req, res) {
     if (!req.file) {
       return res.status(400).json({ error: 'No photo file provided' });
     }
-    const staff = await User.findById(id).select('photo');
+    const staff = await User.findById(id).select('_id');
     if (!staff) return res.status(404).json({ error: 'Staff not found' });
 
-    // Upload buffer to Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: 'biteops/staff-photos', resource_type: 'image' },
-        (err, result) => err ? reject(err) : resolve(result)
-      );
-      stream.end(req.file.buffer);
-    });
-
-    // Delete old Cloudinary photo if it exists
-    if (staff.photo && staff.photo.includes('cloudinary.com')) {
-      const publicId = staff.photo.split('/').slice(-2).join('/').replace(/\.[^/.]+$/, '');
-      await cloudinary.uploader.destroy(publicId).catch(() => {});
-    }
-
-    await User.findByIdAndUpdate(id, { photo: result.secure_url });
-    res.json({ photo: result.secure_url, message: 'Photo uploaded successfully' });
+    // Store photo as base64 data URL directly in MongoDB — no external service needed
+    const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    await User.findByIdAndUpdate(id, { photo: dataUrl });
+    res.json({ photo: dataUrl, message: 'Photo uploaded successfully' });
   } catch (error) {
     console.error('POST /api/staff/:id/photo error:', error);
     return res.status(500).json({ error: 'Internal server error: ' + error.message });
