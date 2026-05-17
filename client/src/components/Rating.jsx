@@ -29,10 +29,12 @@ function Rating({ readOnly: propReadOnly = false }) {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [expandedStaff, setExpandedStaff] = useState({})
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [hygieneSubmitted,    setHygieneSubmitted]    = useState(false)
+  const [performanceSubmitted, setPerformanceSubmitted] = useState(false)
+  const [hygieneUnsaved,    setHygieneUnsaved]    = useState(false)
+  const [performanceUnsaved, setPerformanceUnsaved] = useState(false)
+  const [activeSection, setActiveSection] = useState('hygiene')
   const [attendanceRecords, setAttendanceRecords] = useState({}) // staffId -> attendance record
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [branches, setBranches] = useState([])
   const [areaManagerBranches, setAreaManagerBranches] = useState([])
   
@@ -94,16 +96,7 @@ function Rating({ readOnly: propReadOnly = false }) {
     })
   }
 
-  // Check if it's past 4:30 PM
-  const isHygieneLocked = () => {
-    const now = new Date()
-    const lockTime = new Date()
-    lockTime.setHours(16, 30, 0, 0) // 4:30 PM
-    
-    // Only lock if it's today
-    const isToday = selectedDate === today
-    return isToday && now >= lockTime
-  }
+  const isHygieneLocked = () => false
 
   // Check if staff member is late
   const isStaffLate = (staffId) => {
@@ -197,11 +190,12 @@ function Rating({ readOnly: propReadOnly = false }) {
       })
       
       setRatings(ratingsMap)
-      
-      // Check if ratings already exist (already submitted)
-      const hasExistingRatings = Object.keys(ratingsMap).length > 0
-      setIsSubmitted(hasExistingRatings)
-      setHasUnsavedChanges(false)
+
+      const vals = Object.values(ratingsMap)
+      setHygieneSubmitted(vals.some(r => r.nailsCut || r.beardShaved || r.cleanTshirt || r.blackPants || r.correctFootwear))
+      setPerformanceSubmitted(vals.some(r => r.performance !== undefined && r.performance !== null && r.performance !== ''))
+      setHygieneUnsaved(false)
+      setPerformanceUnsaved(false)
       
       // Expand all staff by default
       const expanded = {}
@@ -294,19 +288,12 @@ function Rating({ readOnly: propReadOnly = false }) {
 
   useEffect(() => {
     fetchScheduledStaff()
-    // Reset submission status when date changes
-    setIsSubmitted(false)
-    setHasUnsavedChanges(false)
+    setHygieneSubmitted(false)
+    setPerformanceSubmitted(false)
+    setHygieneUnsaved(false)
+    setPerformanceUnsaved(false)
   }, [selectedDate, selectedBranch])
 
-  // Update current time every minute to check if hygiene section should be locked
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000) // Update every minute
-    
-    return () => clearInterval(interval)
-  }, [])
 
   useEffect(() => {
     if (showHistory) {
@@ -315,36 +302,18 @@ function Rating({ readOnly: propReadOnly = false }) {
   }, [showHistory])
 
   const handleCheckboxChange = (staffId, field, checked) => {
-    setRatings(prev => ({
-      ...prev,
-      [staffId]: {
-        ...prev[staffId],
-        [field]: checked
-      }
-    }))
-    setHasUnsavedChanges(true)
+    setRatings(prev => ({ ...prev, [staffId]: { ...prev[staffId], [field]: checked } }))
+    setHygieneUnsaved(true)
   }
 
   const handlePerformanceChange = (staffId, value) => {
-    setRatings(prev => ({
-      ...prev,
-      [staffId]: {
-        ...prev[staffId],
-        performance: parseInt(value)
-      }
-    }))
-    setHasUnsavedChanges(true)
+    setRatings(prev => ({ ...prev, [staffId]: { ...prev[staffId], performance: parseInt(value) } }))
+    setPerformanceUnsaved(true)
   }
 
   const handleNotesChange = (staffId, value) => {
-    setRatings(prev => ({
-      ...prev,
-      [staffId]: {
-        ...prev[staffId],
-        notes: value
-      }
-    }))
-    setHasUnsavedChanges(true)
+    setRatings(prev => ({ ...prev, [staffId]: { ...prev[staffId], notes: value } }))
+    setPerformanceUnsaved(true)
   }
 
   const calculateTotalScore = (rating) => {
@@ -368,34 +337,51 @@ function Rating({ readOnly: propReadOnly = false }) {
       (rating.correctFootwear ? 1 : 0)
   }
 
-  const handleSubmitAllRatings = async () => {
-    // Check if all staff have performance ratings
-    const staffToRate = scheduledStaff.filter(s => {
+  const handleSubmitHygiene = async () => {
+    const staffList = showBranchTabs ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff
+    if (staffList.length === 0) { alert('No staff to submit hygiene for.'); return }
+    if (!window.confirm('Submit Hygiene & Grooming ratings to HR?')) return
+    setSubmitting(true)
+    try {
+      for (const staff of staffList) {
+        const rating = ratings[staff.staff_id] || {}
+        await axios.post(`${API_URL}/api/ratings`, {
+          staffId: staff.staff_id,
+          date: selectedDate,
+          nailsCut: rating.nailsCut || false,
+          beardShaved: rating.beardShaved || false,
+          cleanTshirt: rating.cleanTshirt || false,
+          blackPants: rating.blackPants || false,
+          correctFootwear: rating.correctFootwear || false,
+          performance: rating.performance ?? null,
+          notes: rating.notes || ''
+        })
+      }
+      setHygieneSubmitted(true)
+      setHygieneUnsaved(false)
+      alert('Hygiene & Grooming ratings submitted to HR!')
+      fetchScheduledStaff()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to submit hygiene ratings')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleSubmitPerformance = async () => {
+    const staffList = showBranchTabs ? scheduledStaff.filter(s => s.branch === selectedBranch) : scheduledStaff
+    const staffToRate = staffList.filter(s => {
       const r = ratings[s.staff_id]
       return r && r.performance !== undefined && r.performance !== null && r.performance !== ''
     })
-
-    if (staffToRate.length === 0) {
-      alert('Please rate at least one staff member before submitting')
-      return
-    }
-
-    const unratedStaff = scheduledStaff.filter(s => {
+    if (staffToRate.length === 0) { alert('Please rate at least one staff member before submitting.'); return }
+    const unrated = staffList.filter(s => {
       const r = ratings[s.staff_id]
       return !r || r.performance === undefined || r.performance === null || r.performance === ''
     })
-
-    if (unratedStaff.length > 0) {
-      const confirm = window.confirm(
-        `${unratedStaff.length} staff member(s) have not been rated yet. Do you want to submit anyway?`
-      )
-      if (!confirm) return
-    }
-
+    if (unrated.length > 0 && !window.confirm(`${unrated.length} staff member(s) have no performance rating yet. Submit anyway?`)) return
     setSubmitting(true)
-
     try {
-      // Submit all ratings that have a performance value
       for (const staff of staffToRate) {
         const rating = ratings[staff.staff_id]
         await axios.post(`${API_URL}/api/ratings`, {
@@ -410,13 +396,12 @@ function Rating({ readOnly: propReadOnly = false }) {
           notes: rating.notes || ''
         })
       }
-      
-      setIsSubmitted(true)
-      setHasUnsavedChanges(false)
-      alert('Performance ratings submitted to HR successfully!')
+      setPerformanceSubmitted(true)
+      setPerformanceUnsaved(false)
+      alert('Performance ratings submitted to HR!')
       fetchScheduledStaff()
-    } catch (error) {
-      alert(error.response?.data?.error || 'Failed to submit ratings')
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to submit performance ratings')
     } finally {
       setSubmitting(false)
     }
@@ -504,6 +489,28 @@ function Rating({ readOnly: propReadOnly = false }) {
           />
         </div>
       </div>
+
+      {/* Section tabs — only shown for branch managers (not read-only) */}
+      {!readOnly && !showHistory && (
+        <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm w-fit">
+          <button
+            onClick={() => setActiveSection('hygiene')}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors
+              ${activeSection === 'hygiene' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            👔 Hygiene & Grooming
+            {hygieneSubmitted && <span className="w-2 h-2 rounded-full bg-green-400" title="Submitted" />}
+          </button>
+          <button
+            onClick={() => setActiveSection('performance')}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors border-l border-gray-200
+              ${activeSection === 'performance' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            ⭐ Performance
+            {performanceSubmitted && <span className="w-2 h-2 rounded-full bg-green-400" title="Submitted" />}
+          </button>
+        </div>
+      )}
 
       {/* Read-only indicator for HR */}
       {readOnly && (
@@ -803,80 +810,42 @@ function Rating({ readOnly: propReadOnly = false }) {
                       </div>
                     </div>
 
-                    {/* Section 1: Hygiene & Grooming - Beginning of Shift */}
-                    {(() => {
-                      const hygieneLocked = isHygieneLocked()
+                    {/* Section 1: Hygiene & Grooming */}
+                    {(readOnly || activeSection === 'hygiene') && (() => {
                       const staffLate = isStaffLate(staffId)
-                      const hygieneDisabled = hygieneLocked || staffLate || !canRate
-                      
+                      const hygieneDisabled = staffLate || !canRate
                       return (
-                        <div className={`mb-4 p-3 rounded-lg border-2 ${
-                          hygieneLocked 
-                            ? 'bg-gray-100 border-gray-300' 
-                            : staffLate
-                              ? 'bg-red-50 border-red-300'
-                              : 'bg-blue-50 border-blue-200'
-                        }`}>
+                        <div className={`mb-4 p-3 rounded-lg border-2 ${staffLate ? 'bg-red-50 border-red-300' : 'bg-blue-50 border-blue-200'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">👔</span>
-                              <h5 className={`font-semibold ${
-                                hygieneLocked 
-                                  ? 'text-gray-600' 
-                                  : staffLate
-                                    ? 'text-red-800'
-                                    : 'text-blue-800'
-                              }`}>
-                                Hygiene & Grooming (Beginning of Shift)
+                              <h5 className={`font-semibold ${staffLate ? 'text-red-800' : 'text-blue-800'}`}>
+                                Hygiene & Grooming
                               </h5>
-                              {hygieneLocked && (
-                                <span className="text-xs font-medium px-2 py-1 rounded bg-gray-200 text-gray-700">
-                                  🔒 Locked (Past 4:30 PM)
-                                </span>
-                              )}
-                              {staffLate && !hygieneLocked && (
-                                <span className="text-xs font-medium px-2 py-1 rounded bg-red-200 text-red-700">
-                                  ⚠️ Late - Auto Zero
-                                </span>
+                              {staffLate && (
+                                <span className="text-xs font-medium px-2 py-1 rounded bg-red-200 text-red-700">⚠️ Late — Auto Zero</span>
                               )}
                             </div>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              hygieneScore === 5 
-                                ? 'bg-green-100 text-green-700' 
-                                : staffLate
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${hygieneScore === 5 ? 'bg-green-100 text-green-700' : staffLate ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                               {hygieneScore}/5
                             </span>
                           </div>
                           {staffLate && (
-                            <div className="mb-2 p-2 bg-red-100 border border-red-300 rounded text-sm text-red-800">
-                              ⚠️ Staff member was late. Hygiene & Grooming automatically set to 0/5.
-                            </div>
-                          )}
-                          {hygieneLocked && !staffLate && (
-                            <div className="mb-2 p-2 bg-gray-200 border border-gray-300 rounded text-sm text-gray-700">
-                              🔒 This section is locked after 4:30 PM. Ratings cannot be changed.
-                            </div>
+                            <p className="mb-2 text-sm text-red-800 bg-red-100 border border-red-300 rounded p-2">
+                              ⚠️ Staff was late — Hygiene automatically set to 0/5.
+                            </p>
                           )}
                           <div className="flex items-center gap-2 flex-wrap">
-                            {hygieneGroomingCriteria.map((criterion) => {
+                            {hygieneGroomingCriteria.map(criterion => {
                               const isChecked = rating[criterion.id] || false
                               return (
-                                <button
-                                  key={criterion.id}
+                                <button key={criterion.id}
                                   onClick={() => !hygieneDisabled && handleCheckboxChange(staffId, criterion.id, !isChecked)}
                                   disabled={hygieneDisabled}
-                                  title={hygieneLocked ? 'Locked after 4:30 PM' : staffLate ? 'Late staff - auto zero' : criterion.label}
                                   className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all ${
-                                    hygieneDisabled
-                                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
-                                      : isChecked 
-                                        ? 'bg-green-500 text-white shadow-sm' 
-                                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
-                                  }`}
-                                >
+                                    hygieneDisabled ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                                      : isChecked ? 'bg-green-500 text-white shadow-sm'
+                                      : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}>
                                   <span>{criterion.icon}</span>
                                   <span>{criterion.label}</span>
                                 </button>
@@ -887,117 +856,94 @@ function Rating({ readOnly: propReadOnly = false }) {
                       )
                     })()}
 
-                    {/* Section 2: Performance - End of Shift */}
-                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">⭐</span>
-                          <h5 className="font-semibold text-purple-800">Performance (End of Shift)</h5>
+                    {/* Section 2: Performance */}
+                    {(readOnly || activeSection === 'performance') && (
+                      <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">⭐</span>
+                            <h5 className="font-semibold text-purple-800">Performance</h5>
+                          </div>
+                          {perfOption && (
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${perfOption.color}`}>{rating.performance}/5</span>
+                          )}
                         </div>
-                        {perfOption && (
-                          <span className={`text-xs font-medium px-2 py-1 rounded ${perfOption.color}`}>
-                            {rating.performance}/5
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {performanceOptions.map(option => {
+                            const isSelected = rating.performance === option.value
+                            return (
+                              <button key={option.value}
+                                onClick={() => canRate && handlePerformanceChange(staffId, option.value)}
+                                disabled={!canRate}
+                                className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all ${
+                                  isSelected ? `${option.color} ring-2 ring-offset-1 ring-current shadow-sm`
+                                    : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                                } ${!canRate ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                                <span>{option.emoji}</span>
+                                <span>{option.value} — {option.label}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        {!readOnly && (
+                          <div className="mt-3 pt-3 border-t border-purple-100">
+                            <input type="text" value={rating.notes || ''}
+                              onChange={e => handleNotesChange(staffId, e.target.value)}
+                              disabled={!canRate}
+                              placeholder="📝 Add notes (optional)..."
+                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent disabled:bg-gray-100" />
+                          </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {performanceOptions.map((option) => {
-                          const isSelected = rating.performance === option.value
-                          return (
-                            <button
-                              key={option.value}
-                              onClick={() => canRate && handlePerformanceChange(staffId, option.value)}
-                              disabled={!canRate}
-                              title={`${option.value} - ${option.label}`}
-                              className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all ${
-                                isSelected 
-                                  ? `${option.color} ring-2 ring-offset-1 ring-current shadow-sm` 
-                                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
-                              } ${!canRate ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                            >
-                              <span>{option.emoji}</span>
-                              <span>{option.value} - {option.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Notes - Collapsible on small screens */}
-                    {!readOnly && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                            <input
-                          type="text"
-                          value={rating.notes || ''}
-                          onChange={(e) => handleNotesChange(staffId, e.target.value)}
-                              disabled={!canRate}
-                          placeholder="📝 Add notes (optional)..."
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent disabled:bg-gray-100"
-                            />
                       </div>
                     )}
                   </div>
                 )
               })}
 
-              {/* Submit to HR Button - Only for branch managers */}
-              {!readOnly && scheduledStaff.length > 0 && (
-                <div className={`mt-6 p-4 rounded-xl ${
-                  isSubmitted 
-                    ? 'bg-green-50 border-2 border-green-300' 
-                    : hasUnsavedChanges 
-                      ? 'bg-amber-50 border-2 border-amber-300'
-                      : 'bg-gray-50 border-2 border-gray-200'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {isSubmitted ? (
-                        <>
-                          <span className="text-2xl">✅</span>
-                          <div>
-                            <p className="font-semibold text-green-800">Ratings Submitted to HR</p>
-                            <p className="text-sm text-green-600">
-                              {scheduledStaff.filter(s => {
-                                const r = ratings[s.staff_id]
-                                return r && r.performance !== undefined && r.performance !== null && r.performance !== ''
-                              }).length} of {scheduledStaff.length} staff rated
-                            </p>
-                          </div>
-                        </>
-                      ) : hasUnsavedChanges ? (
-                        <>
-                          <span className="text-2xl">⚠️</span>
-                          <div>
-                            <p className="font-semibold text-amber-800">Unsaved Ratings</p>
-                            <p className="text-sm text-amber-600">
-                              Click "Submit to HR" to save your ratings
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-2xl">📊</span>
-                          <div>
-                            <p className="font-semibold text-gray-700">Rate Staff Performance</p>
-                            <p className="text-sm text-gray-500">
-                              Rate all staff members, then submit to HR
-                            </p>
-                          </div>
-                        </>
-                      )}
+              {/* Submit bar — per section, branch managers only */}
+              {!readOnly && scheduledStaff.length > 0 && activeSection === 'hygiene' && (
+                <div className={`mt-6 p-4 rounded-xl border-2 flex items-center justify-between
+                  ${hygieneSubmitted && !hygieneUnsaved ? 'bg-green-50 border-green-300'
+                    : hygieneUnsaved ? 'bg-amber-50 border-amber-300'
+                    : 'bg-blue-50 border-blue-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{hygieneSubmitted && !hygieneUnsaved ? '✅' : hygieneUnsaved ? '⚠️' : '👔'}</span>
+                    <div>
+                      <p className={`font-semibold ${hygieneSubmitted && !hygieneUnsaved ? 'text-green-800' : hygieneUnsaved ? 'text-amber-800' : 'text-blue-800'}`}>
+                        {hygieneSubmitted && !hygieneUnsaved ? 'Hygiene submitted to HR' : hygieneUnsaved ? 'Unsaved hygiene changes' : 'Hygiene & Grooming'}
+                      </p>
+                      <p className={`text-sm ${hygieneSubmitted && !hygieneUnsaved ? 'text-green-600' : hygieneUnsaved ? 'text-amber-600' : 'text-blue-600'}`}>
+                        {hygieneSubmitted && !hygieneUnsaved ? 'Submit again to update' : 'Rate all staff, then submit to HR'}
+                      </p>
                     </div>
-                    <button
-                      onClick={handleSubmitAllRatings}
-                      disabled={submitting || !hasUnsavedChanges}
-                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                        isSubmitted && !hasUnsavedChanges
-                          ? 'bg-green-600 text-white'
-                          : 'bg-brand text-white hover:bg-brand-600'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {submitting ? '⏳ Submitting...' : isSubmitted && !hasUnsavedChanges ? '✓ Submitted' : '📤 Submit to HR'}
-                    </button>
                   </div>
+                  <button onClick={handleSubmitHygiene} disabled={submitting || !hygieneUnsaved}
+                    className="px-6 py-3 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {submitting ? '⏳ Submitting…' : '📤 Submit Hygiene to HR'}
+                  </button>
+                </div>
+              )}
+
+              {!readOnly && scheduledStaff.length > 0 && activeSection === 'performance' && (
+                <div className={`mt-6 p-4 rounded-xl border-2 flex items-center justify-between
+                  ${performanceSubmitted && !performanceUnsaved ? 'bg-green-50 border-green-300'
+                    : performanceUnsaved ? 'bg-amber-50 border-amber-300'
+                    : 'bg-purple-50 border-purple-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{performanceSubmitted && !performanceUnsaved ? '✅' : performanceUnsaved ? '⚠️' : '⭐'}</span>
+                    <div>
+                      <p className={`font-semibold ${performanceSubmitted && !performanceUnsaved ? 'text-green-800' : performanceUnsaved ? 'text-amber-800' : 'text-purple-800'}`}>
+                        {performanceSubmitted && !performanceUnsaved ? 'Performance submitted to HR' : performanceUnsaved ? 'Unsaved performance changes' : 'Performance Ratings'}
+                      </p>
+                      <p className={`text-sm ${performanceSubmitted && !performanceUnsaved ? 'text-green-600' : performanceUnsaved ? 'text-amber-600' : 'text-purple-600'}`}>
+                        {performanceSubmitted && !performanceUnsaved ? 'Submit again to update' : 'Rate all staff, then submit to HR'}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={handleSubmitPerformance} disabled={submitting || !performanceUnsaved}
+                    className="px-6 py-3 rounded-lg font-semibold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {submitting ? '⏳ Submitting…' : '📤 Submit Performance to HR'}
+                  </button>
                 </div>
               )}
 

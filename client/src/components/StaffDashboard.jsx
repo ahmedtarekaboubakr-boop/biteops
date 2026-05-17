@@ -85,132 +85,125 @@ function StaffDashboard() {
 }
 
 // Staff Schedule Component
+const SHIFT_META = {
+  morning: { label: 'Morning', time: '9:00 – 17:30',  bg: 'bg-amber-50',  text: 'text-amber-800',  border: 'border-amber-200',  dot: 'bg-amber-400' },
+  middle:  { label: 'Middle',  time: '13:00 – 21:00', bg: 'bg-blue-50',   text: 'text-blue-800',   border: 'border-blue-200',   dot: 'bg-blue-400' },
+  night:   { label: 'Night',   time: '16:00 – 00:30', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200', dot: 'bg-purple-400' },
+}
+
 function StaffSchedule() {
-  const { user } = useAuth()
   const [schedules, setSchedules] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]     = useState(true)
   const [selectedWeek, setSelectedWeek] = useState(new Date())
 
-  useEffect(() => {
-    fetchSchedule()
-  }, [selectedWeek])
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  // Week starts on Saturday
+  const getWeekBounds = (date) => {
+    const d   = new Date(date)
+    const day = d.getDay()
+    const diff = (day + 1) % 7          // days since last Saturday
+    const start = new Date(d)
+    start.setDate(d.getDate() - diff)
+    start.setHours(0,0,0,0)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
+    return { start, end }
+  }
+
+  const fmt = (d) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth()+1).padStart(2,'0')
+    const dd = String(d.getDate()).padStart(2,'0')
+    return `${y}-${m}-${dd}`
+  }
+
+  useEffect(() => { fetchSchedule() }, [selectedWeek])
 
   const fetchSchedule = async () => {
     setLoading(true)
     try {
-      const weekStart = new Date(selectedWeek)
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-      const weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekEnd.getDate() + 6)
-
-      const startDate = weekStart.toISOString().split('T')[0]
-      const endDate = weekEnd.toISOString().split('T')[0]
-
-      const response = await axios.get(`${API_URL}/api/staff/my-schedule?startDate=${startDate}&endDate=${endDate}`)
-      
-      if (!Array.isArray(response.data)) {
-        console.error('API returned non-array data:', response.data)
-        setSchedules([])
-        return
-      }
-      
-      setSchedules(response.data)
-    } catch (error) {
-      console.error('Failed to fetch schedule:', error)
-      setSchedules([])
-    } finally {
-      setLoading(false)
-    }
+      const { start, end } = getWeekBounds(selectedWeek)
+      const res = await axios.get(`${API_URL}/api/staff/my-schedule?startDate=${fmt(start)}&endDate=${fmt(end)}`)
+      setSchedules(Array.isArray(res.data) ? res.data : [])
+    } catch { setSchedules([]) }
+    finally { setLoading(false) }
   }
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  }
+  const { start, end } = getWeekBounds(selectedWeek)
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start); d.setDate(start.getDate() + i); return d
+  })
+  const weekRange = `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
 
-  const getShiftLabel = (shift) => {
-    const labels = { 
-      morning: '🌅 Morning (9:00 - 17:30)', 
-      middle: '🌆 Middle (13:00 - 21:00)', 
-      night: '🌙 Night (16:00 - 00:30)' 
-    }
-    return labels[shift] || shift
-  }
+  const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">My Schedule</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                const newDate = new Date(selectedWeek)
-                newDate.setDate(newDate.getDate() - 7)
-                setSelectedWeek(newDate)
-              }}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-            >
-              ← Previous Week
-            </button>
-            <button
-              onClick={() => setSelectedWeek(new Date())}
-              className="px-3 py-1 text-sm bg-brand text-white rounded-lg hover:bg-brand-600"
-            >
-              Today
-            </button>
-            <button
-              onClick={() => {
-                const newDate = new Date(selectedWeek)
-                newDate.setDate(newDate.getDate() + 7)
-                setSelectedWeek(newDate)
-              }}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-            >
-              Next Week →
-            </button>
-          </div>
+      {/* Navigation bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-gray-900">My Schedule</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSelectedWeek(d => { const n=new Date(d); n.setDate(n.getDate()-7); return n })}
+            className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">← Prev</button>
+          <button onClick={() => setSelectedWeek(new Date())}
+            className="px-3 py-1.5 text-sm bg-brand text-white rounded-lg hover:bg-brand-600">Today</button>
+          <span className="text-sm font-medium text-gray-600 px-2">{weekRange}</span>
+          <button onClick={() => setSelectedWeek(d => { const n=new Date(d); n.setDate(n.getDate()+7); return n })}
+            className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Next →</button>
         </div>
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">Loading schedule...</div>
-      ) : schedules.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-5xl mb-4">📅</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Schedule Assigned</h3>
-          <p className="text-gray-500">Your schedule will appear here once assigned by your branch manager</p>
-        </div>
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-400 text-sm">Loading schedule…</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Station</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {schedules.map((schedule) => (
-                <tr key={schedule.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{formatDate(schedule.date)}</td>
-                  <td className="px-6 py-4">{getShiftLabel(schedule.shift)}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                      {schedule.station || 'Not assigned'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                      {schedule.title || 'N/A'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-2">
+          {weekDays.map(day => {
+            const dateStr  = fmt(day)
+            const isToday  = dateStr === todayStr
+            const isFri    = day.getDay() === 5
+            const isSat    = day.getDay() === 6
+            const dayShifts = schedules.filter(s => s.date === dateStr)
+
+            return (
+              <div key={dateStr} className={`bg-white rounded-xl border flex items-stretch overflow-hidden
+                ${isToday ? 'border-brand shadow-sm' : 'border-gray-100'}`}>
+                {/* Day column */}
+                <div className={`w-20 shrink-0 flex flex-col items-center justify-center py-3 px-2
+                  ${isToday ? 'bg-brand text-white' : isFri || isSat ? 'bg-gray-50 text-gray-500' : 'bg-gray-50 text-gray-500'}`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide opacity-80">{DAY_ABBR[day.getDay()]}</span>
+                  <span className={`text-2xl font-bold leading-tight ${isToday ? 'text-white' : 'text-gray-800'}`}>{day.getDate()}</span>
+                  {isToday && <span className="text-[10px] font-semibold mt-0.5 opacity-90 uppercase tracking-wider">Today</span>}
+                </div>
+
+                {/* Shifts */}
+                <div className="flex-1 flex flex-wrap items-center gap-2 px-4 py-3 min-h-[60px]">
+                  {dayShifts.length === 0 ? (
+                    <span className="text-sm text-gray-300">—</span>
+                  ) : dayShifts.map(s => {
+                    const meta = SHIFT_META[s.shift] || { label: s.shift, time: '', bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-400' }
+                    return (
+                      <div key={s.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${meta.bg} ${meta.border}`}>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${meta.dot}`} />
+                        <div>
+                          <p className={`font-semibold leading-tight ${meta.text}`}>{meta.label}</p>
+                          <p className="text-gray-400 text-xs leading-tight">{meta.time}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {!loading && schedules.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-10 text-center">
+          <div className="text-4xl mb-3">📅</div>
+          <p className="font-semibold text-gray-700">No shifts this week</p>
+          <p className="text-sm text-gray-400 mt-1">Your schedule will appear here once published by your branch manager</p>
         </div>
       )}
     </div>
@@ -248,101 +241,123 @@ function StaffPerformance() {
     }
   }
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-  }
+  const HYGIENE_ITEMS = [
+    { key: 'nails_cut',        label: 'Nails Cut',        icon: '💅' },
+    { key: 'beard_shaved',     label: 'Beard Shaved',     icon: '🧔' },
+    { key: 'clean_tshirt',     label: 'Clean T-Shirt',    icon: '👕' },
+    { key: 'black_pants',      label: 'Black Pants',      icon: '👖' },
+    { key: 'correct_footwear', label: 'Correct Footwear', icon: '👟' },
+  ]
 
-  const getPerformanceLabel = (score) => {
-    if (score === 3) return '⭐ Excellent'
-    if (score === 2) return '✓ Good'
-    if (score === 1) return '⚠️ Needs Improvement'
-    return '❌ Poor'
-  }
+  const PERF_OPTIONS = [
+    { value: 0, label: 'Very Poor',  emoji: '😞', color: 'bg-red-100    text-red-700'    },
+    { value: 1, label: 'Poor',       emoji: '😐', color: 'bg-orange-100 text-orange-700' },
+    { value: 2, label: 'Fair',       emoji: '😑', color: 'bg-yellow-100 text-yellow-700' },
+    { value: 3, label: 'Good',       emoji: '😊', color: 'bg-blue-100   text-blue-700'   },
+    { value: 4, label: 'Very Good',  emoji: '😄', color: 'bg-indigo-100 text-indigo-700' },
+    { value: 5, label: 'Excellent',  emoji: '🌟', color: 'bg-green-100  text-green-700'  },
+  ]
 
-  const getPerformanceColor = (score) => {
-    if (score === 3) return 'bg-green-100 text-green-700'
-    if (score === 2) return 'bg-blue-100 text-blue-700'
-    if (score === 1) return 'bg-yellow-100 text-yellow-700'
-    return 'bg-red-100 text-red-700'
-  }
+  const fmtDate = (s) => new Date(s).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">View Date:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
-          />
-        </div>
+    <div className="space-y-4 max-w-xl">
+
+      {/* Date picker */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-gray-900">My Performance</h2>
+        <input type="date" value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand" />
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">Loading performance...</div>
+        <div className="bg-white rounded-xl shadow-sm p-10 text-center text-gray-400 text-sm">Loading…</div>
       ) : ratings.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-5xl mb-4">⭐</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Performance Ratings</h3>
-          <p className="text-gray-500">Your performance ratings will appear here once recorded by your branch manager</p>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+          <p className="text-3xl mb-2">⭐</p>
+          <p className="font-semibold text-gray-700">No rating for this date</p>
+          <p className="text-sm text-gray-400 mt-1">Your manager hasn't submitted a rating for this day yet</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {ratings.map((rating) => (
-            <div key={rating.id} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{formatDate(rating.date)}</h3>
-                  <p className="text-sm text-gray-500">Rated by: {rating.manager_name}</p>
+      ) : ratings.map(rating => {
+        const hygieneScore = [rating.nails_cut, rating.beard_shaved, rating.clean_tshirt, rating.black_pants, rating.correct_footwear]
+          .filter(Boolean).length
+        const perfOpt = PERF_OPTIONS.find(p => p.value === rating.performance)
+
+        return (
+          <div key={rating.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
+            {/* Card header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{fmtDate(rating.date)}</p>
+                {rating.manager_name && <p className="text-xs text-gray-400 mt-0.5">Rated by {rating.manager_name}</p>}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-400 mb-0.5">Total score</p>
+                <p className="text-xl font-bold text-brand">{rating.total_score ?? '—'}<span className="text-sm font-normal text-gray-400">/10</span></p>
+              </div>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+
+              {/* ── Section 1: Hygiene & Grooming ── */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">👔 Hygiene & Grooming</p>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${hygieneScore === 5 ? 'bg-green-100 text-green-700' : hygieneScore >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                    {hygieneScore}/5
+                  </span>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getPerformanceColor(rating.performance)}`}>
-                  {getPerformanceLabel(rating.performance)}
+                <div className="grid grid-cols-1 gap-1.5">
+                  {HYGIENE_ITEMS.map(item => {
+                    const passed = !!rating[item.key]
+                    return (
+                      <div key={item.key} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
+                        ${passed ? 'bg-green-50' : 'bg-gray-50'}`}>
+                        <span className={`text-base ${passed ? '' : 'opacity-30'}`}>{item.icon}</span>
+                        <span className={`flex-1 ${passed ? 'text-gray-800' : 'text-gray-400 line-through'}`}>{item.label}</span>
+                        <span className={`font-bold text-xs ${passed ? 'text-green-600' : 'text-gray-300'}`}>{passed ? '✓' : '✗'}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Hygiene & Grooming</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span>{rating.nails_cut ? '✓' : '✗'}</span>
-                      <span>Nails Cut</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>{rating.beard_shaved ? '✓' : '✗'}</span>
-                      <span>Beard Shaved</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>{rating.clean_tshirt ? '✓' : '✗'}</span>
-                      <span>Clean T-Shirt</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>{rating.black_pants ? '✓' : '✗'}</span>
-                      <span>Black Pants</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>{rating.correct_footwear ? '✓' : '✗'}</span>
-                      <span>Correct Footwear</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Overall Score</h4>
-                  <div className="text-3xl font-bold text-brand">{rating.total_score}/8</div>
-                  {rating.notes && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600">{rating.notes}</p>
-                    </div>
+              {/* ── Section 2: Performance ── */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">⭐ Performance</p>
+                  {perfOpt && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${perfOpt.color}`}>{rating.performance}/5</span>
                   )}
                 </div>
+                {perfOpt ? (
+                  <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${perfOpt.color}`}>
+                    <span className="text-2xl">{perfOpt.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-sm">{perfOpt.label}</p>
+                      <p className="text-xs opacity-70">Score: {rating.performance} out of 5</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 rounded-lg bg-gray-50 text-sm text-gray-400">
+                    Performance not yet submitted
+                  </div>
+                )}
               </div>
+
+              {/* Notes */}
+              {rating.notes && (
+                <div className="px-5 py-3">
+                  <p className="text-xs text-gray-400 mb-1">Notes</p>
+                  <p className="text-sm text-gray-600">{rating.notes}</p>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -580,173 +595,105 @@ function StaffPenalties() {
 }
 
 // Staff Information Component
+function InfoRow({ label, value, mono = false }) {
+  return (
+    <div className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-500 shrink-0 w-40">{label}</span>
+      <span className={`text-sm font-medium text-gray-900 text-right ${mono ? 'font-mono' : ''}`}>{value || '—'}</span>
+    </div>
+  )
+}
+
 function StaffInformation() {
   const { user } = useAuth()
-  const [staffInfo, setStaffInfo] = useState(null)
+  const [staffInfo, setStaffInfo]     = useState(null)
   const [leaveBalance, setLeaveBalance] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]         = useState(true)
 
   useEffect(() => {
-    fetchStaffInfo()
-    fetchLeaveBalance()
-  }, [])
+    Promise.all([
+      axios.get(`${API_URL}/api/staff/${user?.id}`).then(r => setStaffInfo(r.data)).catch(() => {}),
+      axios.get(`${API_URL}/api/staff/${user?.id}/leave-balance`).then(r => setLeaveBalance(r.data)).catch(() => {})
+    ]).finally(() => setLoading(false))
+  }, [user?.id])
 
-  const fetchStaffInfo = async () => {
-    try {
-      // Fetch staff information using the user's ID
-      const response = await axios.get(`${API_URL}/api/staff/${user?.id}`)
-      setStaffInfo(response.data)
-    } catch (error) {
-      console.error('Failed to fetch staff information:', error)
-    } finally {
-      setLoading(false)
-    }
+  const fmtDate = (s) => {
+    if (!s) return null
+    return new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   }
 
-  const fetchLeaveBalance = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/staff/${user?.id}/leave-balance`)
-      setLeaveBalance(response.data)
-    } catch (error) {
-      console.error('Failed to fetch leave balance:', error)
-    }
+  const fmtSalary = (v) => {
+    if (!v) return null
+    const n = typeof v === 'number' ? v : parseFloat(v)
+    return `EGP ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-  }
+  if (loading) return <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-400 text-sm">Loading…</div>
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">
-        Loading information...
-      </div>
-    )
-  }
+  if (!staffInfo) return (
+    <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+      <p className="text-gray-500">Could not load your information.</p>
+    </div>
+  )
 
-  if (!staffInfo) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-        <div className="text-5xl mb-4">❌</div>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Unable to Load Information</h3>
-        <p className="text-gray-500">Failed to fetch your staff information</p>
-      </div>
-    )
-  }
+  const initials = (staffInfo.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Personal Information</h2>
-        
-        {/* Photo Section */}
-        {staffInfo.photo && (
-          <div className="mb-6 flex justify-center">
-            <img 
-              src={staffInfo.photo} 
-              alt={staffInfo.name}
-              className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-              onError={(e) => {
-                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"%3E%3Ccircle cx="64" cy="64" r="64" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="48" font-weight="600"%3E' + (staffInfo.name?.charAt(0) || '?') + '%3C/text%3E%3C/svg%3E'
-              }}
-            />
+    <div className="space-y-4 max-w-2xl">
+
+      {/* Profile header card */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+        {staffInfo.photo ? (
+          <img src={staffInfo.photo} alt={staffInfo.name}
+            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shrink-0"
+            onError={e => { e.target.style.display = 'none' }} />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-brand flex items-center justify-center text-white text-xl font-bold shrink-0">
+            {initials}
           </div>
         )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Full Name</label>
-              <p className="text-lg font-semibold text-gray-900 mt-1">{staffInfo.name || 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Employee Code</label>
-              <p className="text-lg font-mono text-gray-900 mt-1">{staffInfo.employeeCode || 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Username</label>
-              <p className="text-lg font-mono text-gray-900 mt-1">{staffInfo.username || 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Title</label>
-              <p className="text-lg font-semibold text-gray-900 mt-1">
-                <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
-                  {staffInfo.title || 'N/A'}
-                </span>
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Branch</label>
-              <p className="text-lg font-semibold text-gray-900 mt-1">{staffInfo.branch || 'N/A'}</p>
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Start Date</label>
-              <p className="text-lg text-gray-900 mt-1">{formatDate(staffInfo.startDate)}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Date of Birth</label>
-              <p className="text-lg text-gray-900 mt-1">{formatDate(staffInfo.dateOfBirth)}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Phone Number</label>
-              <p className="text-lg text-gray-900 mt-1">{staffInfo.phoneNumber || 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">ID Number</label>
-              <p className="text-lg font-mono text-gray-900 mt-1">{staffInfo.idNumber || 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Health Certificate</label>
-              <p className="text-lg text-gray-900 mt-1">
-                {staffInfo.healthCertificate ? (
-                  <span className="text-green-600 font-semibold">✅ Available</span>
-                ) : (
-                  <span className="text-gray-500">Not uploaded</span>
-                )}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Monthly Salary</label>
-              <p className="text-lg font-semibold text-gray-900 mt-1">
-                {staffInfo.salary ? (
-                  <span className="text-green-700 font-bold">
-                    EGP {typeof staffInfo.salary === 'number' 
-                      ? staffInfo.salary.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                      : parseFloat(staffInfo.salary).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                ) : (
-                  <span className="text-gray-500">Not set</span>
-                )}
-              </p>
-            </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-bold text-gray-900 truncate">{staffInfo.name}</h2>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {staffInfo.title && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{staffInfo.title}</span>
+            )}
+            {staffInfo.branch && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">📍 {staffInfo.branch}</span>
+            )}
           </div>
         </div>
+        {staffInfo.employeeCode && (
+          <span className="text-xs font-mono text-gray-400 shrink-0">{staffInfo.employeeCode}</span>
+        )}
       </div>
 
-      {/* Leave Balance Section */}
+      {/* Details card */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-2">
+        <InfoRow label="Username"           value={staffInfo.username}    mono />
+        <InfoRow label="Phone"              value={staffInfo.phoneNumber} />
+        <InfoRow label="ID Number"          value={staffInfo.idNumber}    mono />
+        <InfoRow label="Date of Birth"      value={fmtDate(staffInfo.dateOfBirth)} />
+        <InfoRow label="Start Date"         value={fmtDate(staffInfo.startDate)} />
+        <InfoRow label="Monthly Salary"     value={fmtSalary(staffInfo.salary)} />
+        <InfoRow label="Health Certificate" value={staffInfo.healthCertificate ? '✅ Available' : 'Not uploaded'} />
+      </div>
+
+      {/* Leave balance */}
       {leaveBalance && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Leave Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <label className="text-sm font-medium text-gray-600">Total Days Off</label>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{leaveBalance.total_leave_days || 0}</p>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <label className="text-sm font-medium text-gray-600">Used Days</label>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">{leaveBalance.used_leave_days || 0}</p>
-            </div>
-            <div className="bg-green-50 rounded-lg p-4">
-              <label className="text-sm font-medium text-gray-600">Remaining Days</label>
-              <p className="text-3xl font-bold text-green-600 mt-2">{leaveBalance.remaining_leave_days || 0}</p>
-            </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Leave Balance</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Total',     value: leaveBalance.total_leave_days     || 0, color: 'text-blue-600',   bg: 'bg-blue-50'   },
+              { label: 'Used',      value: leaveBalance.used_leave_days      || 0, color: 'text-amber-600',  bg: 'bg-amber-50'  },
+              { label: 'Remaining', value: leaveBalance.remaining_leave_days || 0, color: 'text-green-600',  bg: 'bg-green-50'  },
+            ].map(item => (
+              <div key={item.label} className={`${item.bg} rounded-lg p-3 text-center`}>
+                <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{item.label} days</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -150,6 +150,7 @@ async function initializeApp() {
     const assetRoutes = await import('./routes/assetRoutes.js');
     const prepChecklistRoutes = await import('./routes/prepChecklistRoutes.js');
     const onboardingRoutes = await import('./routes/onboardingRoutes.js');
+    const monthlyRosterRoutes = await import('./routes/monthlyRosterRoutes.js');
     
     // Register routes
     app.use('/api/auth', authRoutes.default);
@@ -179,6 +180,7 @@ async function initializeApp() {
     app.use('/api/assets', assetRoutes.default);
     app.use('/api/prep-checklists', prepChecklistRoutes.default);
     app.use('/api/onboarding', onboardingRoutes.default);
+    app.use('/api/monthly-roster', monthlyRosterRoutes.default);
     
     console.log('✓ All API routes loaded successfully');
     console.log('==========================================');

@@ -8,6 +8,7 @@ const router = express.Router();
 router.get('/', authenticateToken, requireManager, branchesController.getBranches);
 router.post('/', authenticateToken, requireHR, branchesController.createBranch);
 router.post('/initialize', authenticateToken, requireHR, branchesController.initializeBranches);
+router.post('/repair', authenticateToken, requireHR, branchesController.repairBranchAssignments);
 router.get('/:id', authenticateToken, requireHR, branchesController.getBranchById);
 router.put('/:id', authenticateToken, requireHR, branchesController.updateBranch);
 router.delete('/:id', authenticateToken, requireHR, branchesController.deleteBranch);

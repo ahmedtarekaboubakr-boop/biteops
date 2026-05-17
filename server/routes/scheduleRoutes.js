@@ -7,6 +7,7 @@ const router = express.Router();
 // More specific routes first
 router.get('/date/:date', authenticateToken, requireManagerOrStaff, scheduleController.getSchedulesByDate);
 router.get('/submission-status', authenticateToken, requireManager, scheduleController.getSubmissionStatus);
+router.get('/submission-status-range', authenticateToken, requireManager, scheduleController.getSubmissionStatusRange);
 router.post('/submit', authenticateToken, requireManager, scheduleController.submitSchedule);
 router.post('/swap', authenticateToken, requireManager, scheduleController.swapSchedules);
 

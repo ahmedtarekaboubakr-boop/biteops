@@ -19,13 +19,11 @@ function Penalties({ staff }) {
   })
 
   const penaltyTypes = [
-    'Warning',
-    'Verbal Warning',
-    'Written Warning',
-    'Deduction',
-    'Suspension',
-    'Termination',
-    'Other'
+    '1/4 Day',
+    '1/2 Day',
+    '1 Day',
+    '2 Days',
+    '3 Days'
   ]
 
   const statusOptions = ['active', 'resolved', 'cancelled']
@@ -441,34 +439,6 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
               placeholder="Describe the misconduct..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Penalty Amount (if applicable)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.penaltyAmount}
-              onChange={(e) => setFormData({ ...formData, penaltyAmount: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
-              placeholder="0.00"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Additional Details
-            </label>
-            <textarea
-              value={formData.penaltyDetails}
-              onChange={(e) => setFormData({ ...formData, penaltyDetails: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
-              placeholder="Any additional details or notes..."
             />
           </div>
 

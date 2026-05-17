@@ -6,6 +6,7 @@ const tutorialSchema = new mongoose.Schema({
   filename: { type: String, required: true },
   file_path: { type: String, required: true },
   file_size: Number,
+  folder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TutorialFolder', default: null },
   uploaded_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   created_at: { type: Date, default: Date.now }
 }, {

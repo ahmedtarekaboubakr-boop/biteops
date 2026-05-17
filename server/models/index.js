@@ -9,6 +9,9 @@ import ActivityLog from "./ActivityLog.js";
 import Checklist from "./Checklist.js";
 import Rating from "./Rating.js";
 import Tutorial from "./Tutorial.js";
+import TutorialFolder from "./TutorialFolder.js";
+import MonthlyRosterEntry from "./MonthlyRosterEntry.js";
+import MonthlyRosterSubmission from "./MonthlyRosterSubmission.js";
 import StaffLeaveBalance from "./StaffLeaveBalance.js";
 import LeaveRequest from "./LeaveRequest.js";
 import FingerprintLog from "./FingerprintLog.js";
@@ -154,6 +157,9 @@ export {
   Checklist,
   Rating,
   Tutorial,
+  TutorialFolder,
+  MonthlyRosterEntry,
+  MonthlyRosterSubmission,
   StaffLeaveBalance,
   LeaveRequest,
   FingerprintLog,

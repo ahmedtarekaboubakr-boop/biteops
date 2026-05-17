@@ -12,13 +12,12 @@ import ChangePasswordModal from './ChangePasswordModal'
 import Rating from './Rating'
 import Sidebar from './Sidebar'
 
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
-
 function OwnerDashboard() {
   const { user, logout } = useAuth()
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('staff')
   const [staff, setStaff] = useState([])
+  const [branches, setBranches] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedBranches, setExpandedBranches] = useState({})
   const [selectedStaff, setSelectedStaff] = useState(null)
@@ -29,6 +28,7 @@ function OwnerDashboard() {
   const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
+    fetchBranches()
     fetchStaff()
   }, [])
 
@@ -38,11 +38,25 @@ function OwnerDashboard() {
     }
   }, [activeTab])
 
+  const fetchBranches = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/branches`)
+      const branchList = Array.isArray(response.data) ? response.data : []
+      const branchNames = branchList.map(b => b.name)
+      setBranches(branchNames)
+      const expanded = {}
+      branchNames.forEach(name => { expanded[name] = true })
+      setExpandedBranches(expanded)
+    } catch (error) {
+      console.error('Failed to fetch branches:', error)
+      setBranches([])
+    }
+  }
+
   const fetchStaff = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/staff`)
       
-      // Ensure response.data is an array
       if (!Array.isArray(response.data)) {
         console.error('API returned non-array data:', response.data)
         setStaff([])
@@ -54,12 +68,6 @@ function OwnerDashboard() {
         s.title !== 'Area Manager' && s.title !== 'Operations Manager'
       )
       setStaff(filteredStaff)
-      // Initialize all branches as expanded
-      const expanded = {}
-      BRANCHES.forEach(branch => {
-        expanded[branch] = true
-      })
-      setExpandedBranches(expanded)
     } catch (error) {
       console.error('Failed to fetch staff:', error)
       setStaff([])
@@ -120,7 +128,8 @@ function OwnerDashboard() {
   }
 
   const getStaffByBranch = (branch) => {
-    return staff.filter(s => s.branch === branch)
+    const key = branch.trim().toLowerCase()
+    return staff.filter(s => s.branch?.trim().toLowerCase() === key)
   }
 
   const getTitleColor = (title) => {
@@ -321,7 +330,7 @@ function OwnerDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {BRANCHES.map(branch => {
+                {branches.map(branch => {
                   const branchStaff = getStaffByBranch(branch)
                   return (
                     <div 
@@ -376,6 +385,53 @@ function OwnerDashboard() {
                     </div>
                   )
                 })}
+
+                {/* Unassigned staff — branch was removed or never set */}
+                {(() => {
+                  const branchKeys = branches.map(b => b.trim().toLowerCase())
+                  const unassigned = staff.filter(s => !branchKeys.includes(s.branch?.trim().toLowerCase()))
+                  if (unassigned.length === 0) return null
+                  return (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <button
+                        onClick={() => toggleBranch('__unassigned__')}
+                        className="w-full px-5 py-4 bg-gradient-to-r from-gray-400 to-gray-500 text-white flex justify-between items-center hover:from-gray-500 hover:to-gray-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">❓</span>
+                          <div className="text-left">
+                            <h3 className="font-bold text-lg">Unassigned</h3>
+                            <p className="text-gray-200 text-sm">{unassigned.length} staff members</p>
+                          </div>
+                        </div>
+                        <span className="text-2xl">
+                          {expandedBranches['__unassigned__'] ? '−' : '+'}
+                        </span>
+                      </button>
+                      {expandedBranches['__unassigned__'] && (
+                        <div className="divide-y divide-gray-100">
+                          {unassigned.map(member => (
+                            <div
+                              key={member.id}
+                              onClick={() => setSelectedStaff(member)}
+                              className="px-5 py-3 hover:bg-brand-50 transition-colors cursor-pointer"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-medium text-gray-900 hover:text-brand">{member.name}</p>
+                                  <p className="text-xs text-gray-500">{member.branch || 'No branch'}</p>
+                                </div>
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTitleColor(member.title)}`}>
+                                  {member.title || 'Staff'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>

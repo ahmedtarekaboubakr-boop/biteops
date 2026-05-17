@@ -62,10 +62,11 @@ export async function getBranchById(req, res) {
 
 export async function createBranch(req, res) {
   try {
-    const { name, phone, managerId, area } = req.body;
+    let { name, phone, managerId, area } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Branch name is required' });
     }
+    name = name.trim();
     if (!area || !['Fifth Settlement', '6th of October'].includes(area)) {
       return res.status(400).json({ error: 'Area is required and must be either "Fifth Settlement" or "6th of October"' });
     }
@@ -114,7 +115,8 @@ export async function createBranch(req, res) {
 
 export async function updateBranch(req, res) {
   try {
-    const { name, phone, managerId, area } = req.body;
+    let { name, phone, managerId, area } = req.body;
+    if (name) name = name.trim();
     const branchId = req.params.id;
     const existing = await Branch.findById(branchId);
     if (!existing) {
@@ -301,6 +303,41 @@ export async function getBranchManagers(req, res) {
     })) || []);
   } catch (error) {
     console.error('GET /api/branch-managers error:', error);
+    return res.status(500).json({ error: 'Internal server error: ' + error.message });
+  }
+}
+
+export async function repairBranchAssignments(req, res) {
+  try {
+    const branches = await Branch.find().lean();
+    const canonicalMap = {};
+    branches.forEach(b => {
+      canonicalMap[b.name.trim().toLowerCase()] = b.name;
+    });
+
+    const users = await User.find({ branch: { $ne: null } }).select('_id branch').lean();
+    let fixed = 0;
+    let unmatched = [];
+
+    for (const u of users) {
+      const raw = (u.branch || '').trim();
+      const key = raw.toLowerCase();
+      const canonical = canonicalMap[key];
+      if (canonical && canonical !== u.branch) {
+        await User.findByIdAndUpdate(u._id, { branch: canonical });
+        fixed++;
+      } else if (!canonical) {
+        unmatched.push(u.branch);
+      }
+    }
+
+    res.json({
+      message: `Repair complete. Fixed ${fixed} staff record(s).`,
+      fixed,
+      unmatched: [...new Set(unmatched)]
+    });
+  } catch (error) {
+    console.error('POST /api/branches/repair error:', error);
     return res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 }

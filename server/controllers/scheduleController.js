@@ -313,6 +313,32 @@ export async function getSubmissionStatus(req, res) {
   }
 }
 
+export async function getSubmissionStatusRange(req, res) {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+    const match = { week_start: { $gte: startDate, $lte: endDate } };
+    if (req.user.role === 'manager') {
+      const manager = await User.findById(req.user.id).select('branch');
+      if (manager && manager.branch) match.branch = manager.branch;
+    }
+    const submissions = await ScheduleSubmission.find(match)
+      .populate('manager_id', 'name')
+      .sort({ week_start: 1 })
+      .lean();
+    res.json(submissions.map(s => ({
+      ...s,
+      id: s._id.toString(),
+      manager_name: s.manager_id?.name || null
+    })) || []);
+  } catch (error) {
+    console.error('GET /api/schedules/submission-status-range error:', error);
+    return res.status(500).json({ error: 'Internal server error: ' + error.message });
+  }
+}
+
 export async function getSchedulesByDate(req, res) {
   try {
     const { date } = req.params;

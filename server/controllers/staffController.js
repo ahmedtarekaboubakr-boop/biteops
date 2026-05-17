@@ -110,6 +110,8 @@ export async function createStaff(req, res) {
       branch = manager.branch;
     }
 
+    if (branch) branch = branch.trim();
+
     const isAreaManager = title === 'Area Manager';
     const isOperationsManagerTitle = title === 'Operations Manager';
     const requiredFields = !name || !username || !password || !dateOfBirth || !employeeCode || !title || !phoneNumber || !idNumber || !startDate;
@@ -332,6 +334,8 @@ export async function updateStaff(req, res) {
       }
       branch = manager.branch;
     }
+
+    if (branch) branch = branch.trim();
 
     if (username && (username === '2222' || username === '1111')) {
       return res.status(400).json({ error: 'This username is not allowed' });
