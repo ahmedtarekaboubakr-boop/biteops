@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
-
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
+import { useBranches } from '../context/BranchContext'
 
 function Rating({ readOnly: propReadOnly = false }) {
   const { user } = useAuth()
@@ -35,17 +34,20 @@ function Rating({ readOnly: propReadOnly = false }) {
   const [performanceUnsaved, setPerformanceUnsaved] = useState(false)
   const [activeSection, setActiveSection] = useState('hygiene')
   const [attendanceRecords, setAttendanceRecords] = useState({}) // staffId -> attendance record
-  const [branches, setBranches] = useState([])
-  const [areaManagerBranches, setAreaManagerBranches] = useState([])
-  
+  const { branches } = useBranches()
+  const areaManagerBranches = isAreaManager && user?.area
+    ? branches.filter(b => b.area === user.area).map(b => b.name)
+    : []
+  const allBranchNames = branches.map(b => b.name)
+
   // Determine which branches to show
-  const visibleBranches = isOwner || isOperationsManager 
-    ? (branches.length > 0 ? branches.map(b => b.name) : BRANCHES)
-    : isAreaManager 
+  const visibleBranches = isOwner || isOperationsManager
+    ? allBranchNames
+    : isAreaManager
       ? areaManagerBranches
-      : BRANCHES
-  
-  const [selectedBranch, setSelectedBranch] = useState(visibleBranches[0] || BRANCHES[0])
+      : allBranchNames
+
+  const [selectedBranch, setSelectedBranch] = useState('')
 
   const today = new Date().toISOString().split('T')[0]
   
@@ -250,41 +252,12 @@ function Rating({ readOnly: propReadOnly = false }) {
     }
   }
 
-  // Fetch branches from API
+  // Auto-select first visible branch when branch list loads
   useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/api/branches`)
-        
-        if (!Array.isArray(response.data)) {
-          console.error('API returned non-array data:', response.data)
-          setBranches([])
-          setAreaManagerBranches([])
-          return
-        }
-        
-        setBranches(response.data)
-        
-        // Filter branches for area managers based on their area
-        if (isAreaManager && user?.area) {
-          const filtered = response.data.filter(b => b.area === user.area)
-          const branchNames = filtered.map(b => b.name)
-          setAreaManagerBranches(branchNames)
-          
-          // Set default selected branch for area manager
-          if (branchNames.length > 0) {
-            setSelectedBranch(branchNames[0])
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch branches:', error)
-        // Fallback to static branches if API fails
-        setBranches(BRANCHES.map(name => ({ name, area: null })))
-      }
+    if (visibleBranches.length > 0 && !selectedBranch) {
+      setSelectedBranch(visibleBranches[0])
     }
-    
-    fetchBranches()
-  }, [isAreaManager, user?.area])
+  }, [visibleBranches.join(',')])
 
   useEffect(() => {
     fetchScheduledStaff()

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
+import { useBranches } from '../context/BranchContext'
 
 const CATEGORIES = [
   { value: 'machinery', label: 'Machinery', icon: '⚙️' },
@@ -18,9 +19,8 @@ const STATUS_OPTIONS = [
   { value: 'disposed', label: 'Disposed', color: 'gray' }
 ]
 
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
-
 function Maintenance() {
+  const { branchNames } = useBranches()
   const { user } = useAuth()
   const isOwner = user?.role === 'owner'
   const isOperationsManager = user?.role === 'operations_manager'
@@ -189,7 +189,7 @@ function Maintenance() {
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
               >
                 <option value="all">All Branches</option>
-                {BRANCHES.map(branch => (
+                {branchNames.map(branch => (
                   <option key={branch} value={branch}>{branch}</option>
                 ))}
               </select>
@@ -265,7 +265,7 @@ function Maintenance() {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
                     >
                       <option value="">Select branch</option>
-                      {BRANCHES.map(branch => (
+                      {branchNames.map(branch => (
                         <option key={branch} value={branch}>{branch}</option>
                       ))}
                     </select>

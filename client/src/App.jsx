@@ -6,6 +6,7 @@ import ManagerDashboard from './components/ManagerDashboard'
 import StaffDashboard from './components/StaffDashboard'
 import TabletClock from './components/TabletClock'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { BranchProvider } from './context/BranchContext'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -48,9 +49,11 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <BranchProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </BranchProvider>
     </AuthProvider>
   )
 }

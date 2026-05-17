@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { API_URL } from '../config'
+import { useBranches } from '../context/BranchContext'
 
 const toAbsUrl = (path) => {
   if (!path) return null
@@ -8,9 +9,9 @@ const toAbsUrl = (path) => {
 }
 
 const TITLES = ['Crew', 'Cashier', 'Line Leader', 'Supervisor', 'Assistant Manager', 'Branch Manager', 'Area Manager', 'Operations Manager']
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch']
 
 function StaffList({ staff, onEdit, onDelete, onReactivate, isHR }) {
+  const { branchNames } = useBranches()
   const [titleFilter, setTitleFilter] = useState('')
   const [branchFilter, setBranchFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
@@ -80,7 +81,7 @@ function StaffList({ staff, onEdit, onDelete, onReactivate, isHR }) {
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-transparent"
             >
               <option value="">All Branches</option>
-              {BRANCHES.map(branch => (
+              {branchNames.map(branch => (
                 <option key={branch} value={branch}>{branch}</option>
               ))}
             </select>

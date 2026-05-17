@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
+import { useBranches } from '../context/BranchContext'
 
 const toAbsUrl = (path) => {
   if (!path) return null
@@ -30,7 +31,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
     totalLeaveDays: '',
     area: ''
   })
-  const [branches, setBranches] = useState([])
+  const { branchNames } = useBranches()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [photoFile, setPhotoFile] = useState(null)
@@ -44,38 +45,10 @@ function StaffForm({ staff, onClose, onSuccess }) {
   const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
-    fetchBranches()
     if (staff?.id) {
       fetchEmploymentHistory()
     }
   }, [])
-
-  const fetchBranches = async () => {
-    try {
-      // Try to fetch from branches API (for HR)
-      try {
-        const response = await axios.get(`${API_URL}/api/branches`)
-        if (!Array.isArray(response.data)) {
-          console.error('API returned non-array data:', response.data)
-          throw new Error('Invalid branches data')
-        }
-        setBranches(response.data.map(b => b.name))
-      } catch (err) {
-        // If not HR or API fails, fall back to getting unique branches from users
-        const staffResponse = await axios.get(`${API_URL}/api/staff`)
-        if (!Array.isArray(staffResponse.data)) {
-          console.error('API returned non-array data:', staffResponse.data)
-          throw new Error('Invalid staff data')
-        }
-        const uniqueBranches = [...new Set(staffResponse.data.map(s => s.branch).filter(Boolean))]
-        setBranches(uniqueBranches.length > 0 ? uniqueBranches : ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch'])
-      }
-    } catch (error) {
-      console.error('Failed to fetch branches:', error)
-      // Fallback to default branches
-      setBranches(['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch'])
-    }
-  }
 
   useEffect(() => {
     if (staff) {
@@ -630,7 +603,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
                   <option value="">
                     {formData.title === 'Operations Manager' ? 'None / assign later' : 'Select branch'}
                   </option>
-                  {branches.map((branch) => (
+                  {branchNames.map((branch) => (
                     <option key={branch} value={branch}>
                       {branch}
                     </option>

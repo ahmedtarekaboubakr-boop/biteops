@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
-
-const BRANCHES = ['All Branches', 'Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
+import { useBranches } from '../context/BranchContext'
 
 function ManagerForm({ manager, onClose, onSuccess }) {
+  const { branchNames } = useBranches()
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -231,7 +231,7 @@ function ManagerForm({ manager, onClose, onSuccess }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
               >
                 <option value="">Select location</option>
-                {BRANCHES.map((branch) => (
+                {['All Branches', ...branchNames].map((branch) => (
                   <option key={branch} value={branch}>
                     {branch}
                   </option>

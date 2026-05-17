@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
-
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
+import { useBranches } from '../context/BranchContext'
 const ROLES = [
   { value: 'owner', label: 'Owner' },
   { value: 'hr_manager', label: 'HR Manager' },
@@ -15,6 +14,7 @@ const ROLES = [
 
 function Announcements() {
   const { user } = useAuth()
+  const { branchNames } = useBranches()
   const [announcements, setAnnouncements] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -246,7 +246,7 @@ function Announcements() {
     } else if (isAreaManager && user?.area) {
       return getAreaManagerBranches(user.area)
     }
-    return BRANCHES
+    return branchNames
   }
 
   const availableBranches = getAvailableBranches()
@@ -422,7 +422,7 @@ function Announcements() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    {BRANCHES.map((branch) => (
+                    {branchNames.map((branch) => (
                       <label key={branch} className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                         <input
                           type="checkbox"

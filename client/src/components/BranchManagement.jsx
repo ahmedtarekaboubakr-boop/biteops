@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
+import { useBranches } from '../context/BranchContext'
 
 function BranchManagement() {
+  const { refreshBranches } = useBranches()
   const [branches, setBranches] = useState([])
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
@@ -85,6 +87,7 @@ function BranchManagement() {
     try {
       await axios.delete(`${API_URL}/api/branches/${branchId}`)
       fetchBranches()
+      refreshBranches()
       if (selectedBranch && selectedBranch.id === branchId) {
         setSelectedBranch(null)
       }
@@ -136,6 +139,7 @@ function BranchManagement() {
 
   const handleFormSuccess = () => {
     fetchBranches()
+    refreshBranches()
     handleFormClose()
   }
 
@@ -148,6 +152,7 @@ function BranchManagement() {
       const response = await axios.post(`${API_URL}/api/branches/initialize`)
       alert(`Branches initialized successfully!\nCreated: ${response.data.created.join(', ') || 'None'}\nSkipped (already exist): ${response.data.skipped.join(', ') || 'None'}`)
       fetchBranches()
+      refreshBranches()
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to initialize branches')
     }

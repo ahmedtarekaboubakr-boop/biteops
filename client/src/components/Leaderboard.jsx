@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
-
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
+import { useBranches } from '../context/BranchContext'
 const AREAS = ['Fifth Settlement', '6th of October']
 
 function Leaderboard() {
@@ -18,39 +17,10 @@ function Leaderboard() {
   const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30') // days: '7', '30', '90', 'all'
   const [filter, setFilter] = useState('all') // 'all', 'branch:BranchName', 'area:AreaName'
-  const [branches, setBranches] = useState([])
-  const [areaManagerBranches, setAreaManagerBranches] = useState([])
-
-  // Fetch branches from API
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/api/branches`)
-        
-        if (!Array.isArray(response.data)) {
-          console.error('API returned non-array data:', response.data)
-          setBranches([])
-          setAreaManagerBranches([])
-          return
-        }
-        
-        setBranches(response.data)
-        
-        // Filter branches for area managers based on their area
-        if (isAreaManager && user?.area) {
-          const filtered = response.data.filter(b => b.area === user.area)
-          const branchNames = filtered.map(b => b.name)
-          setAreaManagerBranches(branchNames)
-        }
-      } catch (error) {
-        console.error('Failed to fetch branches:', error)
-        // Fallback to static branches if API fails
-        setBranches(BRANCHES.map(name => ({ name, area: null })))
-      }
-    }
-    
-    fetchBranches()
-  }, [isAreaManager, user?.area])
+  const { branches } = useBranches()
+  const areaManagerBranches = isAreaManager && user?.area
+    ? branches.filter(b => b.area === user.area).map(b => b.name)
+    : []
 
   useEffect(() => {
     fetchLeaderboard()
@@ -140,7 +110,7 @@ function Leaderboard() {
               {(isOwner || isOperationsManager) && (
                 <>
                   <optgroup label="By Branch">
-                    {(branches.length > 0 ? branches.map(b => b.name) : BRANCHES).map(branch => (
+                    {branches.map(b => b.name).map(branch => (
                       <option key={branch} value={`branch:${branch}`}>{branch}</option>
                     ))}
                   </optgroup>

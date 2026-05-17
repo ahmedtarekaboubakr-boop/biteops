@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
+import { useBranches } from '../context/BranchContext'
 import MonthlyRoster from './MonthlyRoster'
-
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
 
 const SHIFTS = [
   { id: 'morning', label: 'Morning', time: '9:00 – 17:30',  bg: 'bg-amber-50',  text: 'text-amber-800',  border: 'border-amber-200' },
@@ -32,30 +31,16 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   const [showNotifications,setShowNotifications]= useState(false)
   const [userBranch,       setUserBranch]       = useState(null)
   const [editMode,         setEditMode]         = useState(false)
-  const [branches,         setBranches]         = useState([])
-  const [areaManagerBranches, setAreaManagerBranches] = useState([])
 
   const [viewMode, setViewMode] = useState('weekly')
 
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const operationsManagerBranches = branches.length > 0 ? branches.map(b => b.name) : BRANCHES
 
-  // ── Branches ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/branches`)
-        if (!Array.isArray(res.data)) { setBranches([]); setAreaManagerBranches([]); return }
-        setBranches(res.data)
-        if (isAreaManager && user?.area) {
-          setAreaManagerBranches(res.data.filter(b => b.area === user.area).map(b => b.name))
-        }
-      } catch {
-        setBranches(BRANCHES.map(name => ({ name, area: null })))
-      }
-    }
-    fetchBranches()
-  }, [isAreaManager, user?.area])
+  const { branches } = useBranches()
+  const operationsManagerBranches = branches.map(b => b.name)
+  const areaManagerBranches = isAreaManager && user?.area
+    ? branches.filter(b => b.area === user.area).map(b => b.name)
+    : []
 
   useEffect(() => { if (user?.branch) setUserBranch(user.branch) }, [user])
 
@@ -184,7 +169,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
   const unreadCount       = notifications.filter(n => !n.is_read).length
   const isMultiBranch     = readOnly || isAreaManager || isOperationsManager
   const showContent       = !isMultiBranch || selectedBranch
-  const branchTabList     = isOperationsManager ? operationsManagerBranches : isAreaManager ? areaManagerBranches : BRANCHES
+  const branchTabList     = isOperationsManager ? operationsManagerBranches : isAreaManager ? areaManagerBranches : branches.map(b => b.name)
   const canEditWeekly     = !readOnly && (!submissionStatus?.status || editMode)
 
   const getSubmissionForBranch = (b) => Array.isArray(submissionStatus) ? submissionStatus.find(s => s.branch === b) : null

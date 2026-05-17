@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
+import { useBranches } from '../context/BranchContext'
 
 const CATEGORIES = [
   { id: 'proteins', label: 'Proteins', icon: '🥩' },
@@ -13,10 +14,9 @@ const CATEGORIES = [
   { id: 'other', label: 'Other', icon: '📋' }
 ]
 
-const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills']
-
 function Inventory() {
   const { user } = useAuth()
+  const { branchNames } = useBranches()
   const [activeSection, setActiveSection] = useState('transfers')
   const [inventory, setInventory] = useState([])
   const [transfers, setTransfers] = useState([])
@@ -491,6 +491,7 @@ function Inventory() {
           currentBranch={user?.branch}
           onClose={() => setShowForm(false)}
           onSubmit={handleFormSubmit}
+          allBranchNames={branchNames}
         />
       )}
     </div>
@@ -498,7 +499,7 @@ function Inventory() {
 }
 
 // Inventory Form Component
-function InventoryForm({ type, inventory, currentBranch, onClose, onSubmit }) {
+function InventoryForm({ type, inventory, currentBranch, onClose, onSubmit, allBranchNames = [] }) {
   const [formData, setFormData] = useState({
     itemId: '',
     itemName: '',
@@ -528,7 +529,7 @@ function InventoryForm({ type, inventory, currentBranch, onClose, onSubmit }) {
   }
 
   // Filter out current branch from transfer destinations
-  const availableBranches = BRANCHES.filter(branch => branch !== currentBranch)
+  const availableBranches = allBranchNames.filter(branch => branch !== currentBranch)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
