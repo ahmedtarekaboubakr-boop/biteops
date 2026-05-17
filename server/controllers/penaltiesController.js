@@ -7,8 +7,8 @@ export async function createPenalty(req, res) {
       return res.status(403).json({ error: 'HR managers cannot create penalties. Only branch managers can record penalties.' });
     }
     const { staffId, date, penaltyType, misconductDescription, penaltyAmount, penaltyDetails } = req.body;
-    if (!staffId || !date || !penaltyType || !misconductDescription) {
-      return res.status(400).json({ error: 'Missing required fields: staffId, date, penaltyType, misconductDescription' });
+    if (!staffId || !date || !misconductDescription) {
+      return res.status(400).json({ error: 'Missing required fields: staffId, date, misconductDescription' });
     }
     const staff = await User.findOne({
       _id: staffId,
@@ -135,11 +135,36 @@ export async function getPenaltyById(req, res) {
 
 export async function updatePenalty(req, res) {
   try {
-    if (req.user.role === 'hr_manager') {
-      return res.status(403).json({ error: 'HR managers cannot edit penalties. Only branch managers can edit penalties.' });
-    }
     const { id } = req.params;
     const { date, penaltyType, misconductDescription, penaltyAmount, penaltyDetails, status } = req.body;
+
+    // HR can only update penalty_type and submit to staff
+    if (req.user.role === 'hr_manager') {
+      const { hrSubmit } = req.body;
+      const penalty = await Penalty.findById(id)
+        .populate('staff_id', 'name employee_code')
+        .populate('manager_id', 'name')
+        .lean();
+      if (!penalty) return res.status(404).json({ error: 'Penalty not found' });
+      const hrUpdate = { updated_at: new Date() };
+      if (penaltyType !== undefined) hrUpdate.penalty_type = penaltyType;
+      if (hrSubmit === true) {
+        if (!penalty.penalty_type && !penaltyType) {
+          return res.status(400).json({ error: 'Please assign a penalty type before submitting.' });
+        }
+        hrUpdate.hr_submitted = true;
+      }
+      const updated = await Penalty.findByIdAndUpdate(id, hrUpdate, { new: true })
+        .populate('staff_id', 'name employee_code').populate('manager_id', 'name').lean();
+      return res.json({
+        ...updated,
+        id: updated._id,
+        staff_name: updated.staff_id?.name,
+        employee_code: updated.staff_id?.employee_code,
+        manager_name: updated.manager_id?.name
+      });
+    }
+
     const match = { _id: id };
     if (req.user.role === 'manager') {
       const manager = await User.findById(req.user.id).select('branch');
@@ -154,7 +179,7 @@ export async function updatePenalty(req, res) {
     }
     const updateData = {
       date: date || existingPenalty.date,
-      penalty_type: penaltyType || existingPenalty.penalty_type,
+      penalty_type: penaltyType !== undefined ? penaltyType : existingPenalty.penalty_type,
       misconduct_description: misconductDescription || existingPenalty.misconduct_description,
       penalty_amount: penaltyAmount !== undefined ? penaltyAmount : existingPenalty.penalty_amount,
       penalty_details: penaltyDetails !== undefined ? penaltyDetails : existingPenalty.penalty_details,

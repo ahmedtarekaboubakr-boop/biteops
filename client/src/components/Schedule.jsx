@@ -507,7 +507,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
             <div className="overflow-y-auto flex-1 p-3 space-y-1.5">
               {!Array.isArray(staff) || staff.length === 0
                 ? <p className="text-center text-sm text-gray-400 py-6">No staff available</p>
-                : staff.map(member => {
+                : staff.filter(s => !['Area Manager','Operations Manager'].includes(s.title) && !['area_manager','operations_manager'].includes(s.role)).map(member => {
                   const already = schedules.some(s =>
                     s.staff_id === member.id &&
                     s.date === fmt(selectedCell.date) &&

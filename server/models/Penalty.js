@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const penaltySchema = new mongoose.Schema({
   staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: String, required: true },
-  penalty_type: { type: String, required: true },
+  penalty_type: { type: String, default: null },
   misconduct_description: { type: String, required: true },
   penalty_amount: { type: Number, default: 0 },
   penalty_details: String,
@@ -15,6 +15,7 @@ const penaltySchema = new mongoose.Schema({
     default: 'active',
     enum: ['active', 'resolved', 'cancelled']
   },
+  hr_submitted: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, {

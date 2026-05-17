@@ -57,7 +57,12 @@ function ManagerDashboard() {
         return
       }
       
-      setStaff(response.data)
+      // Exclude Area Managers and Operations Managers from the schedule staff list
+      const EXCLUDED_TITLES = ['Area Manager', 'Operations Manager']
+      const EXCLUDED_ROLES  = ['area_manager', 'operations_manager']
+      setStaff(response.data.filter(s =>
+        !EXCLUDED_TITLES.includes(s.title) && !EXCLUDED_ROLES.includes(s.role)
+      ))
     } catch (error) {
       console.error('Failed to fetch staff:', error)
       setStaff([])

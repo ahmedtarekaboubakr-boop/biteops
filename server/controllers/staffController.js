@@ -700,7 +700,7 @@ export async function getMyRequests(req, res) {
 export async function getMyPenalties(req, res) {
   try {
     if (req.user.role !== 'staff') return res.status(403).json({ error: 'Access denied' });
-    const penalties = await Penalty.find({ staff_id: req.user.id })
+    const penalties = await Penalty.find({ staff_id: req.user.id, hr_submitted: true })
       .populate('staff_id', 'name')
       .populate('manager_id', 'name')
       .sort({ date: -1, created_at: -1 })

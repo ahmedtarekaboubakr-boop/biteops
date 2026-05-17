@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
+
+const toAbsUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http') || path.startsWith('data:')) return path
+  return `${API_URL}${path}`
+}
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -90,9 +96,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         area: staff.area || ''
       })
       if (staff.photo) {
-        // If photo is a relative path, prepend the base URL
-        const photoUrl = staff.photo.startsWith('http') ? staff.photo : staff.photo
-        setPhotoPreview(photoUrl)
+        setPhotoPreview(toAbsUrl(staff.photo))
       }
       if (staff.healthCertificate) {
         setCertificatePreview(staff.healthCertificate)
@@ -148,7 +152,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
         }
       })
       
-      setPhotoPreview(response.data.photo)
+      setPhotoPreview(toAbsUrl(response.data.photo))
       setPhotoFile(null)
       alert('Photo uploaded successfully')
     } catch (err) {
@@ -340,7 +344,7 @@ function StaffForm({ staff, onClose, onSuccess }) {
               {photoPreview && (
                 <div className="relative">
                   <img 
-                    src={photoPreview.startsWith('data:') ? photoPreview : photoPreview} 
+                    src={photoPreview}
                     alt="Preview" 
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
                   />

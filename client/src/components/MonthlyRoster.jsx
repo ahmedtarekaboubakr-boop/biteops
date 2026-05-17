@@ -28,9 +28,6 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
   const [entries, setEntries]       = useState({})    // `${staffId}-${day}` → code
   const [saving, setSaving]         = useState({})    // `${staffId}-${day}` → bool
-  const [submission, setSubmission] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [editMode, setEditMode]     = useState(false)
 
   // Picker popup state
   const [picker, setPicker] = useState(null)   // { staffId, day, x, y }
@@ -55,24 +52,11 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
     } catch (err) { console.error('Failed to fetch roster:', err) }
   }, [branch, year, month, isManager])
 
-  const fetchSubmission = useCallback(async () => {
-    if (!branch) return
-    try {
-      const params = { year, month }
-      if (!isManager) params.branch = branch
-      const res = await axios.get(`${API_URL}/api/monthly-roster/submission-status`, { params })
-      setSubmission(res.data)
-    } catch (err) { console.error('Failed to fetch submission:', err) }
-  }, [branch, year, month, isManager])
-
   useEffect(() => {
     setEntries({})
-    setSubmission(null)
-    setEditMode(false)
     setPicker(null)
     fetchRoster()
-    fetchSubmission()
-  }, [fetchRoster, fetchSubmission])
+  }, [fetchRoster])
 
   // Close picker on outside click
   useEffect(() => {
@@ -88,7 +72,6 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
   // ── Open picker ─────────────────────────────────────────────────────────────
   const handleCellClick = (staffId, day, e) => {
     if (readOnly) return
-    if (submission?.status === 'submitted' && !editMode) return
     e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
     setPicker({ staffId, day, top: rect.bottom + window.scrollY, left: rect.left + window.scrollX })
@@ -118,28 +101,12 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
     }
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!window.confirm(`${submission ? 'Re-submit' : 'Submit'} the roster for ${monthLabel}? HR will be notified.`)) return
-    setSubmitting(true)
-    try {
-      await axios.post(`${API_URL}/api/monthly-roster/submit`, { year, month })
-      alert(`Roster ${submission ? 'updated' : 'submitted'} successfully!`)
-      setEditMode(false)
-      fetchSubmission()
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to submit')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const d = new Date(year, month - 1, i + 1)
     return { num: i + 1, abbr: DAY_ABBR[d.getDay()] }
   })
 
-  const canEdit = !readOnly && (!submission?.status || editMode)
+  const canEdit = !readOnly
   const rosterStaff = staff.filter(s => {
     if (s.title === 'Area Manager' || s.title === 'Operations Manager') return false
     // Managers already receive only their branch's staff from the parent
@@ -199,33 +166,10 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">Next →</button>
         </div>
 
-        <div className="flex items-center gap-3">
-          {submission && (
-            <span className={`text-xs px-3 py-1 rounded-full font-medium ${submission.status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {submission.status === 'submitted' ? '✓ Submitted' : '⚠ Updated after submit'}
-            </span>
-          )}
-          {!readOnly && submission?.status === 'submitted' && !editMode && (
-            <button onClick={() => setEditMode(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">
-              ✏️ Edit
-            </button>
-          )}
-          {!readOnly && (canEdit || editMode) && (
-            <button onClick={handleSubmit} disabled={submitting}
-              className="px-5 py-2 bg-brand text-white rounded-lg font-semibold hover:bg-brand-600 disabled:opacity-50 text-sm">
-              {submitting ? 'Submitting…' : submission ? '🔄 Re-submit' : '📤 Submit to HR'}
-            </button>
-          )}
-        </div>
+        {!readOnly && (
+          <span className="text-xs text-gray-400 italic">Changes save automatically</span>
+        )}
       </div>
-
-      {/* Submitted notice */}
-      {submission?.status === 'submitted' && !editMode && !readOnly && (
-        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2 text-sm text-green-800">
-          ✅ Roster submitted. Click <strong>Edit</strong> to make changes and re-submit.
-        </div>
-      )}
 
       {/* Legend */}
       <div className="flex flex-wrap gap-2">
@@ -234,7 +178,7 @@ function MonthlyRoster({ staff = [], selectedBranch, readOnly }) {
             <strong>{s.code}</strong> — {s.label}
           </span>
         ))}
-        {canEdit && <span className="text-xs text-gray-400 italic self-center ml-1">Click a cell to set status</span>}
+        {!readOnly && <span className="text-xs text-gray-400 italic self-center ml-1">Click a cell to set status</span>}
       </div>
 
       {/* Grid */}

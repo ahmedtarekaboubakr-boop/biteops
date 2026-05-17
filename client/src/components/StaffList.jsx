@@ -1,4 +1,11 @@
 import { useState, useMemo } from 'react'
+import { API_URL } from '../config'
+
+const toAbsUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http') || path.startsWith('data:')) return path
+  return `${API_URL}${path}`
+}
 
 const TITLES = ['Crew', 'Cashier', 'Line Leader', 'Supervisor', 'Assistant Manager', 'Branch Manager', 'Area Manager', 'Operations Manager']
 const BRANCHES = ['Mivida', 'Leven', 'Sodic Villete', 'Arkan', 'Palm Hills', 'Multi-Branch']
@@ -165,7 +172,7 @@ function StaffList({ staff, onEdit, onDelete, onReactivate, isHR }) {
                     <td className="px-3 py-3">
                       {staffMember.photo ? (
                         <img 
-                          src={staffMember.photo} 
+                          src={toAbsUrl(staffMember.photo)} 
                           alt={staffMember.name}
                           className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
                           onError={(e) => {

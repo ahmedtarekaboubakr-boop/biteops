@@ -563,7 +563,7 @@ function StaffPenalties() {
             <div key={penalty.id} className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{penalty.penalty_type}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{penalty.penalty_type || 'Penalty'}</h3>
                   <p className="text-sm text-gray-500">{formatDate(penalty.date)}</p>
                 </div>
                 {penalty.penalty_amount > 0 && (
@@ -644,7 +644,7 @@ function StaffInformation() {
       {/* Profile header card */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
         {staffInfo.photo ? (
-          <img src={staffInfo.photo} alt={staffInfo.name}
+          <img src={staffInfo.photo.startsWith('http') || staffInfo.photo.startsWith('data:') ? staffInfo.photo : `${API_URL}${staffInfo.photo}`} alt={staffInfo.name}
             className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shrink-0"
             onError={e => { e.target.style.display = 'none' }} />
         ) : (

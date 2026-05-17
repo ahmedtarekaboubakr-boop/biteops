@@ -3,6 +3,9 @@ import { API_URL } from '../config'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
+const PENALTY_TYPES = ['1/4 Day', '1/2 Day', '1 Day', '2 Days', '3 Days']
+const STATUS_OPTIONS = ['active', 'resolved', 'cancelled']
+
 function Penalties({ staff }) {
   const { user } = useAuth()
   const isHR = user?.role === 'hr_manager'
@@ -18,19 +21,7 @@ function Penalties({ staff }) {
     status: ''
   })
 
-  const penaltyTypes = [
-    '1/4 Day',
-    '1/2 Day',
-    '1 Day',
-    '2 Days',
-    '3 Days'
-  ]
-
-  const statusOptions = ['active', 'resolved', 'cancelled']
-
-  useEffect(() => {
-    fetchPenalties()
-  }, [filters])
+  useEffect(() => { fetchPenalties() }, [filters])
 
   const fetchPenalties = async () => {
     setLoading(true)
@@ -44,37 +35,14 @@ function Penalties({ staff }) {
       if (filters.status) params.status = filters.status
 
       const response = await axios.get(`${API_URL}/api/penalties`, { params })
-      
-      if (!Array.isArray(response.data)) {
-        console.error('API returned non-array data:', response.data)
-        setPenalties([])
-        alert('Failed to load penalties data')
-        return
-      }
-      
+      if (!Array.isArray(response.data)) { setPenalties([]); return }
       setPenalties(response.data)
     } catch (error) {
       console.error('Failed to fetch penalties:', error)
       setPenalties([])
-      alert('Failed to fetch penalties: ' + (error.response?.data?.error || error.message))
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleCreatePenalty = () => {
-    setEditingPenalty(null)
-    setShowForm(true)
-  }
-
-  const handleEditPenalty = (penalty) => {
-    setEditingPenalty(penalty)
-    setShowForm(true)
-  }
-
-  const handleFormClose = () => {
-    setShowForm(false)
-    setEditingPenalty(null)
   }
 
   const handleFormSubmit = async (formData) => {
@@ -84,9 +52,10 @@ function Penalties({ staff }) {
         alert('Penalty updated successfully')
       } else {
         await axios.post(`${API_URL}/api/penalties`, formData)
-        alert('Penalty created successfully')
+        alert('Penalty recorded successfully')
       }
-      handleFormClose()
+      setShowForm(false)
+      setEditingPenalty(null)
       fetchPenalties()
     } catch (error) {
       alert('Failed to save penalty: ' + (error.response?.data?.error || error.message))
@@ -94,38 +63,42 @@ function Penalties({ staff }) {
   }
 
   const handleDeletePenalty = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this penalty?')) {
-      return
-    }
-
+    if (!window.confirm('Are you sure you want to delete this penalty?')) return
     try {
       await axios.delete(`${API_URL}/api/penalties/${id}`)
-      alert('Penalty deleted successfully')
       fetchPenalties()
     } catch (error) {
       alert('Failed to delete penalty: ' + (error.response?.data?.error || error.message))
     }
   }
 
-  const formatDate = (date) => {
-    if (!date) return 'N/A'
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  // HR: assign penalty type inline (auto-saves)
+  const handleAssignType = async (penaltyId, penaltyType) => {
+    try {
+      await axios.put(`${API_URL}/api/penalties/${penaltyId}`, { penaltyType })
+      setPenalties(prev =>
+        prev.map(p => p.id === penaltyId ? { ...p, penalty_type: penaltyType } : p)
+      )
+    } catch (error) {
+      alert('Failed to update penalty type: ' + (error.response?.data?.error || error.message))
+    }
   }
 
-  const formatDateTime = (dateTime) => {
-    if (!dateTime) return 'N/A'
-    const date = new Date(dateTime)
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  // HR: submit penalty so staff can see it
+  const handleSubmitToStaff = async (penaltyId) => {
+    try {
+      const updated = await axios.put(`${API_URL}/api/penalties/${penaltyId}`, { hrSubmit: true })
+      setPenalties(prev =>
+        prev.map(p => p.id === penaltyId ? { ...p, hr_submitted: true, ...updated.data } : p)
+      )
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to submit penalty')
+    }
+  }
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
   return (
@@ -134,7 +107,7 @@ function Penalties({ staff }) {
         <h2 className="text-3xl font-bold text-gray-900">Penalties</h2>
         {!isHR && (
           <button
-            onClick={handleCreatePenalty}
+            onClick={() => { setEditingPenalty(null); setShowForm(true) }}
             className="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-600 transition-colors shadow-sm"
           >
             + Record Penalty
@@ -145,14 +118,14 @@ function Penalties({ staff }) {
       {isHR && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-blue-700 text-sm">
-            📋 <strong>View Only:</strong> HR managers can view penalties but cannot create, edit, or delete them. Only branch managers can record penalties.
+            📋 <strong>HR:</strong> Branch managers record penalties. You can assign the Penalty Type for each entry using the dropdown in the table below.
           </p>
         </div>
       )}
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className={`grid grid-cols-1 gap-4 ${isHR ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
             <input
@@ -182,27 +155,26 @@ function Penalties({ staff }) {
               {staff
                 .filter(s => s.title !== 'Operations Manager' && s.title !== 'Area Manager')
                 .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.employeeCode})
-                </option>
-              ))}
+                  <option key={s.id} value={s.id}>{s.name} ({s.employeeCode})</option>
+                ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Penalty Type</label>
-            <select
-              value={filters.penaltyType}
-              onChange={(e) => setFilters({ ...filters, penaltyType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
-            >
-              <option value="">All Types</option>
-              {penaltyTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Penalty Type filter — HR only */}
+          {isHR && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Penalty Type</label>
+              <select
+                value={filters.penaltyType}
+                onChange={(e) => setFilters({ ...filters, penaltyType: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+              >
+                <option value="">All Types</option>
+                {PENALTY_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
@@ -211,69 +183,50 @@ function Penalties({ staff }) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
             >
               <option value="">All Status</option>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>
           </div>
         </div>
       </div>
 
-      {/* Penalty Form Modal */}
+      {/* Form Modal (branch managers only) */}
       {showForm && (
         <PenaltyForm
           penalty={editingPenalty}
           staff={staff}
-          penaltyTypes={penaltyTypes}
-          statusOptions={statusOptions}
-          onClose={handleFormClose}
+          onClose={() => { setShowForm(false); setEditingPenalty(null) }}
           onSubmit={handleFormSubmit}
         />
       )}
 
-      {/* Penalties List */}
+      {/* Table */}
       {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500">Loading penalties...</div>
-        </div>
+        <div className="text-center py-12 text-gray-500">Loading penalties...</div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Staff
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Penalty Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Misconduct
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Recorded By
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  {isHR && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Penalty Type
+                    </th>
+                  )}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Misconduct</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded By</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {penalties.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={isHR ? 7 : 6} className="px-6 py-8 text-center text-gray-500">
                       No penalties found for the selected filters
                     </td>
                   </tr>
@@ -287,36 +240,45 @@ function Penalties({ staff }) {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(penalty.date)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {penalty.penalty_type}
-                      </td>
+                      {/* Penalty Type — HR can assign inline */}
+                      {isHR && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            value={penalty.penalty_type || ''}
+                            onChange={(e) => handleAssignType(penalty.id, e.target.value)}
+                            className={`text-sm px-2 py-1 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand ${
+                              penalty.penalty_type
+                                ? 'border-gray-300 text-gray-900 font-semibold'
+                                : 'border-orange-300 text-orange-600 bg-orange-50'
+                            }`}
+                          >
+                            <option value="">— Assign type —</option>
+                            {PENALTY_TYPES.map((type) => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                        </td>
+                      )}
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={penalty.misconduct_description}>
                         {penalty.misconduct_description}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                        {penalty.penalty_amount > 0 ? `$${parseFloat(penalty.penalty_amount).toFixed(2)}` : 'N/A'}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            penalty.status === 'active'
-                              ? 'bg-red-100 text-red-800'
-                              : penalty.status === 'resolved'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          penalty.status === 'active'
+                            ? 'bg-red-100 text-red-800'
+                            : penalty.status === 'resolved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
                           {penalty.status.charAt(0).toUpperCase() + penalty.status.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {penalty.manager_name}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{penalty.manager_name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        {!isHR && (
+                        {!isHR ? (
                           <>
                             <button
-                              onClick={() => handleEditPenalty(penalty)}
+                              onClick={() => { setEditingPenalty(penalty); setShowForm(true) }}
                               className="text-brand hover:text-brand-700"
                             >
                               Edit
@@ -328,9 +290,19 @@ function Penalties({ staff }) {
                               Delete
                             </button>
                           </>
-                        )}
-                        {isHR && (
-                          <span className="text-gray-400 text-xs">View only</span>
+                        ) : penalty.hr_submitted ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                            ✓ Submitted
+                          </span>
+                        ) : penalty.penalty_type ? (
+                          <button
+                            onClick={() => handleSubmitToStaff(penalty.id)}
+                            className="px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-brand-600 transition-colors"
+                          >
+                            Submit
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Assign type first</span>
                         )}
                       </td>
                     </tr>
@@ -345,21 +317,18 @@ function Penalties({ staff }) {
   )
 }
 
-// Penalty Form Component
-function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onSubmit }) {
+// Branch manager form — no Penalty Type field
+function PenaltyForm({ penalty, staff, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     staffId: penalty?.staff_id || '',
     date: penalty?.date || new Date().toISOString().split('T')[0],
-    penaltyType: penalty?.penalty_type || '',
     misconductDescription: penalty?.misconduct_description || '',
-    penaltyAmount: penalty?.penalty_amount || 0,
-    penaltyDetails: penalty?.penalty_details || '',
     status: penalty?.status || 'active'
   })
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!formData.staffId || !formData.date || !formData.penaltyType || !formData.misconductDescription) {
+    if (!formData.staffId || !formData.date || !formData.misconductDescription) {
       alert('Please fill in all required fields')
       return
     }
@@ -368,7 +337,7 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             {penalty ? 'Edit Penalty' : 'Record New Penalty'}
@@ -389,10 +358,8 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
               {staff
                 .filter(s => s.title !== 'Operations Manager' && s.title !== 'Area Manager')
                 .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.employeeCode})
-                </option>
-              ))}
+                  <option key={s.id} value={s.id}>{s.name} ({s.employeeCode})</option>
+                ))}
             </select>
           </div>
 
@@ -407,25 +374,6 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Penalty Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.penaltyType}
-              onChange={(e) => setFormData({ ...formData, penaltyType: e.target.value })}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
-            >
-              <option value="">Select Penalty Type</option>
-              {penaltyTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div>
@@ -450,10 +398,8 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
               >
-                {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </option>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                 ))}
               </select>
             </div>
@@ -463,13 +409,13 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
+              className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-brand-600"
             >
               {penalty ? 'Update Penalty' : 'Record Penalty'}
             </button>
@@ -481,4 +427,3 @@ function PenaltyForm({ penalty, staff, penaltyTypes, statusOptions, onClose, onS
 }
 
 export default Penalties
-
