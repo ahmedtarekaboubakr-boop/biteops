@@ -2,6 +2,28 @@ import multer from 'multer';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary (env vars set in Render dashboard)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+export { cloudinary };
+
+// Memory storage for uploads that go straight to Cloudinary
+export const memoryUploadPhoto = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp/;
+    const ok = allowed.test(file.originalname.toLowerCase().split('.').pop()) ||
+               file.mimetype.startsWith('image/');
+    ok ? cb(null, true) : cb(new Error('Only image files are allowed'));
+  }
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

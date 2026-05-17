@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken, requireManager, requireHR, requireOwner } from '../middleware.js';
-import { uploadPhoto, uploadCertificate } from '../uploads.js';
+import { memoryUploadPhoto, uploadCertificate } from '../uploads.js';
 import * as staffController from '../controllers/staffController.js';
 import * as staffCredentialsController from '../controllers/staffCredentialsController.js';
 
@@ -21,7 +21,7 @@ router.post(
   staffCredentialsController.generateCredentials
 );
 router.get('/', authenticateToken, requireManager, staffController.getStaff);
-router.post('/:id/photo', authenticateToken, requireHR, uploadPhoto.single('photo'), staffController.uploadPhoto);
+router.post('/:id/photo', authenticateToken, requireHR, memoryUploadPhoto.single('photo'), staffController.uploadPhoto);
 router.post('/:id/health-certificate', authenticateToken, requireHR, uploadCertificate.single('certificate'), staffController.uploadHealthCertificate);
 router.get('/:id', authenticateToken, staffController.getStaffById);
 router.put('/:id', authenticateToken, requireHR, staffController.updateStaff);
