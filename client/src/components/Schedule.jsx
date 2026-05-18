@@ -499,8 +499,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
                   .filter(member =>
                     !schedules.some(s =>
                       s.staff_id === member.id &&
-                      s.date === fmt(selectedCell.date) &&
-                      s.shift === selectedCell.shift
+                      s.date === fmt(selectedCell.date)
                     )
                   )
                 if (available.length === 0)
