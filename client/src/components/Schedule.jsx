@@ -413,9 +413,7 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
                               const clickable = canEditWeekly
                               return (
                                 <td key={di}
-                                  onClick={() => { if (!clickable) return; setSelectedCell({ date, shift: shift.id }); setShowStaffPicker(true) }}
                                   className={`px-2 py-2 align-top border-l border-gray-100 min-h-[80px]
-                                    ${clickable ? 'cursor-pointer hover:bg-gray-50' : ''}
                                     ${!canEditWeekly && submissionStatus?.status ? 'bg-gray-50/50' : ''}`}>
                                   <div className="space-y-1 min-h-[60px]">
                                     {cell.map(s => {
@@ -445,10 +443,16 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
                                         </div>
                                       )
                                     })}
-                                    {cell.length === 0 && (
-                                      <div className="flex items-center justify-center h-10 text-gray-300 text-xs">
-                                        {clickable ? '+ add' : '—'}
-                                      </div>
+                                    {clickable && (
+                                      <button
+                                        onClick={() => { setSelectedCell({ date, shift: shift.id }); setShowStaffPicker(true) }}
+                                        className="w-full flex items-center justify-center gap-1 mt-1 py-2 rounded-lg border-2 border-dashed border-gray-200 text-gray-400 hover:border-brand hover:text-brand hover:bg-brand-50 transition-colors text-sm font-semibold active:scale-95"
+                                      >
+                                        <span className="text-lg leading-none">+</span>
+                                      </button>
+                                    )}
+                                    {!clickable && cell.length === 0 && (
+                                      <div className="flex items-center justify-center h-10 text-gray-300 text-xs">—</div>
                                     )}
                                   </div>
                                 </td>
