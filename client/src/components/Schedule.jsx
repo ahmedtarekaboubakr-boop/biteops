@@ -490,25 +490,29 @@ function Schedule({ staff, readOnly: propReadOnly = false }) {
 
             {/* Staff list */}
             <div className="overflow-y-auto flex-1 p-3 space-y-1.5">
-              {!Array.isArray(staff) || staff.length === 0
-                ? <p className="text-center text-sm text-gray-400 py-6">No staff available</p>
-                : staff.filter(s => !['Area Manager','Operations Manager'].includes(s.title) && !['area_manager','operations_manager'].includes(s.role)).map(member => {
-                  const already = schedules.some(s =>
-                    s.staff_id === member.id &&
-                    s.date === fmt(selectedCell.date) &&
-                    s.shift === selectedCell.shift
+              {(() => {
+                const available = !Array.isArray(staff) ? [] : staff
+                  .filter(s =>
+                    !['Area Manager', 'Operations Manager'].includes(s.title) &&
+                    !['area_manager', 'operations_manager'].includes(s.role)
                   )
-                  return (
-                    <button key={member.id} onClick={() => !already && handleAddStaff(member.id)} disabled={already}
-                      className={`w-full text-left px-4 py-3 rounded-xl border transition-colors
-                        ${already ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-white border-gray-200 hover:bg-brand-50 hover:border-brand-200'}`}>
-                      <p className="font-semibold text-sm text-gray-900">{member.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{member.title || ''} {member.employeeCode ? `· ${member.employeeCode}` : ''}</p>
-                      {already && <p className="text-xs text-gray-400 mt-0.5">Already scheduled</p>}
-                    </button>
+                  .filter(member =>
+                    !schedules.some(s =>
+                      s.staff_id === member.id &&
+                      s.date === fmt(selectedCell.date) &&
+                      s.shift === selectedCell.shift
+                    )
                   )
-                })}
+                if (available.length === 0)
+                  return <p className="text-center text-sm text-gray-400 py-6">All staff already assigned to this shift</p>
+                return available.map(member => (
+                  <button key={member.id} onClick={() => handleAddStaff(member.id)}
+                    className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-brand-50 hover:border-brand-200 transition-colors">
+                    <p className="font-semibold text-sm text-gray-900">{member.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{member.title || ''}{member.employeeCode ? ` · ${member.employeeCode}` : ''}</p>
+                  </button>
+                ))
+              })()}
             </div>
           </div>
         </div>
